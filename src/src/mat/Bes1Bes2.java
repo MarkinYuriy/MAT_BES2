@@ -72,7 +72,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		Matt mat1 = new Matt();
 		mat1.data=mData;
 		mat1.slots = slots;
-		for(int i=0; i<46; i++){
+		for(int i=0; i<94; i++){
 			slots.add((int)(Math.random()*2)==0?false:true);
 		}
 		
@@ -82,7 +82,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		client = new com.google.api.services.calendar.Calendar.Builder(
 				httpTransport, jsonFactory, credential).setApplicationName(
 				APP_NAME).build();
-		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat5")).execute(); 
+		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat100")).execute(); 
 		 setMatCalendar1(null, null, matts);
  
 	}
