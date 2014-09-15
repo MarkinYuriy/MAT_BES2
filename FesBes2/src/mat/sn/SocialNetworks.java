@@ -7,15 +7,18 @@ package mat.sn;
 import java.util.HashMap;
 
 public abstract class SocialNetworks implements IFesBes2 {
-    //must contain MAT user's user name (email) as a key and social network user information
-    //(???user name for gmail URL request forming??? and token)
-    private static HashMap<String, String> users = new HashMap<String, String>();
+    //must contain MAT user's user name (email) as a key and user's social networks information
+    private static HashMap<String, HashMap<String, String>> users = new HashMap<String, HashMap<String, String>>();
 
-    void addToken(String userName, String token) {
-        users.put(userName, token);
+    @Override
+    public void addToken(String userName, String sn, String token) {
+        HashMap<String, String> social_networks = new HashMap<String, String>();
+        social_networks.put(sn, token);
+        users.put(userName, social_networks);
     }
 
-    String getToken(String userName) {
-        return users.get(userName);
+    @Override
+    public String getToken(String userName, String sn) {
+        return users.get(userName).get(sn);
     }
 }

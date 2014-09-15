@@ -8,27 +8,28 @@ import com.google.gdata.util.ServiceException;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Google extends SocialNetworks {
     private static final String APPLICATION_NAME = "MyAvailableTime";
     //creating service that allows working with gmail API
-    private static final ContactsService service = new ContactsService(APPLICATION_NAME);
-    //current feed's URL request 1st part (+gmail username + "/full")
-    private static final String URL = "http://www.google.com/m8/feeds/contacts/";
+    private static final ContactsService gmailService = new ContactsService(APPLICATION_NAME);
+    //current feed's URL request
+    private static final String gmailRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
 
     @Override
-    public String[] getContacts(String username, String password) {
+    public String[] getContacts(String username, String mailServer) {
         /*
         Created by Oleg Braginsky 09.09.2014
         Method allows to get all email-contacts from user's gmail account by token.
-         */
-        ArrayList<String> contacts = new ArrayList<String>();
+        */
+        LinkedList<String> contacts = new LinkedList<String>();
         try {
-            service.setUserCredentials(username, password);
-//            service.setUserToken(token);//setting credentials according to token received
-            URL feedUrl = new URL(URL + username + "/full");//forming full URL request for current user
-            ContactFeed feeds = service.getFeed(feedUrl, ContactFeed.class);//getting contacts full info
+            String token = getToken(username, mailServer);
+            gmailService.setHeader("Authorization", "Bearer " + token);
+            gmailService.setUserToken(token);//setting credentials according to token received
+            URL feedUrl = new URL(gmailRequestURL);//forming full URL request for current user
+            ContactFeed feeds = gmailService.getFeed(feedUrl, ContactFeed.class);//getting contacts full info
             //getting emails from contacts info
             for (int i = 0; i < feeds.getEntries().size(); i++) {
                 ContactEntry contact = feeds.getEntries().get(i);
@@ -65,7 +66,7 @@ public class Google extends SocialNetworks {
     }
 
     @Override
-    public boolean removeContactFromCIrcle(String circleName, String contact, String userName) {
+    public boolean removeContactFromCircle(String circleName, String contact, String userName) {
         return false;
     }
 
