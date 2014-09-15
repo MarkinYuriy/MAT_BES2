@@ -42,7 +42,6 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	public static void main(String[] args) throws Exception {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JsonFactory jsonFactory = new JacksonFactory();
-
 		clientSecrets = GoogleClientSecrets.load(jsonFactory, new FileReader(
 				CLIENT_SECRET_PATH));
 
@@ -66,17 +65,35 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				.execute();
 		GoogleCredential credential = new GoogleCredential()
 				.setFromTokenResponse(response);
+		//creating Matts
+		MattData mData= new MattData("mat1", 1, new Date(), 0, 23, 1, "password");
+		ArrayList<Boolean> slots = new ArrayList<Boolean> ();
+		
+		Matt mat1 = new Matt();
+		mat1.data=mData;
+		mat1.slots = slots;
+		for(int i=0; i<46; i++){
+			slots.add((int)(Math.random()*2)==0?false:true);
+		}
+		
+		List<Matt> matts=new ArrayList<Matt>();
+		matts.add(mat1);
+		
 		client = new com.google.api.services.calendar.Calendar.Builder(
 				httpTransport, jsonFactory, credential).setApplicationName(
 				APP_NAME).build();
-		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat Calendar")).execute(); 
+		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat5")).execute(); 
+		 setMatCalendar1(null, null, matts);
  
 	}
 
 	@Override
 	public void setMatCalendar(String username, String[] snNames,
+			List<Matt> matts) {}
+	 
+	public static void setMatCalendar1(String username, String[] snNames,
 			List<Matt> matts) {
-		long minPoint = 0;
+		long minPoint = Long.MAX_VALUE;
 		long maxPoint = 0;
 		long start = 0;
 		long end = 0;
@@ -88,14 +105,16 @@ public class Bes1Bes2 implements IBes1Bes2 {
 			minPoint = ((start = getStartPoint(matt)) < minPoint) ? start
 					: minPoint;
 			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
-			listMattInfo.add(new MattInfo((int) start / 30 * 60 * 1000,
-					(int) end / 30 * 60 * 1000, matt.slots));
+			listMattInfo.add(new MattInfo((int) start /( 30 * 60 * 1000),
+					(int) end / (30 * 60 * 1000), matt.slots));
 		}
-		int resultSize = (int) ((maxPoint - minPoint) / 30 * 60 * 1000);
+		System.out.println(maxPoint+" "+minPoint);
+		int resultSize = (int) ((maxPoint - minPoint) / (30 * 60 * 1000));
+		System.out.println(resultSize);
 		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>(resultSize);
 		Collections.fill(resultSlots, false);
-		MattInfo result = new MattInfo((int) minPoint / 30 * 60 * 1000,
-				(int) maxPoint / 30 * 60 * 1000, resultSlots);
+		MattInfo result = new MattInfo((int) minPoint / (30 * 60 * 1000),
+				(int) maxPoint /( 30 * 60 * 1000), resultSlots);
 		for (int i = 0; i < resultSize; i++) {
 			for (int j = 0; j < size; j++) {
 				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
@@ -122,12 +141,12 @@ public class Bes1Bes2 implements IBes1Bes2 {
 
 	}
 
-	private long getStartPoint(Matt matt) {
+	private static long getStartPoint(Matt matt) {
 		return matt.data.startDate.getTime() + matt.data.startHour * 60 * 60
 				* 1000;
 	}
 
-	private long getEndPoint(Matt matt) {
+	private static long getEndPoint(Matt matt) {
 		return matt.data.startDate.getTime()
 				+ (matt.data.nDays * 24 + matt.data.endHour) * 60 * 60 * 1000;
 	}
