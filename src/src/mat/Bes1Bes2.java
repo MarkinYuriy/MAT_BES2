@@ -105,16 +105,18 @@ public class Bes1Bes2 implements IBes1Bes2 {
 			minPoint = ((start = getStartPoint(matt)) < minPoint) ? start
 					: minPoint;
 			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
-			listMattInfo.add(new MattInfo((int) start /( 30 * 60 * 1000),
-					(int) end / (30 * 60 * 1000), matt.slots));
+			System.out.println(start+" "+end);
+			listMattInfo.add(new MattInfo((int)( start /( 30 * 60 * 1000)),
+					(int)( end / (30 * 60 * 1000)), matt.slots));
 		}
 		System.out.println(maxPoint+" "+minPoint);
 		int resultSize = (int) ((maxPoint - minPoint) / (30 * 60 * 1000));
 		System.out.println(resultSize);
-		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>(resultSize);
-		Collections.fill(resultSlots, false);
-		MattInfo result = new MattInfo((int) minPoint / (30 * 60 * 1000),
-				(int) maxPoint /( 30 * 60 * 1000), resultSlots);
+		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
+		for(int i=0; i<resultSize; i++)
+			resultSlots.add(false);
+		MattInfo result = new MattInfo((int) (minPoint / (30 * 60 * 1000)),
+				(int) (maxPoint /( 30 * 60 * 1000)), resultSlots);
 		for (int i = 0; i < resultSize; i++) {
 			for (int j = 0; j < size; j++) {
 				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
