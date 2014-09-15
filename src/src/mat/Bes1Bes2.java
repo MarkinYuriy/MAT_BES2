@@ -28,8 +28,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	private static final String APP_NAME = "Calendar API Quickstart";
 	private static final String USER = "natalia.sheshukov@gmail.com";
 	private static final String CLIENT_SECRET_PATH = "C:/Users/Natalia/workspace/GmailQuick/src/client_secrets.json";
-	private static GoogleClientSecrets clientSecrets;
-
+	private static GoogleClientSecrets clientSecrets; 
 	private static Calendar ourCalendar;
 
 	@Override
@@ -65,32 +64,38 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				.execute();
 		GoogleCredential credential = new GoogleCredential()
 				.setFromTokenResponse(response);
-		//creating Matts
-		MattData mData= new MattData("mat1", 1, new Date(), 0, 23, 1, "password");
-		ArrayList<Boolean> slots = new ArrayList<Boolean> ();
 		
+		// creating List<Matt> matts
+		MattData mData = new MattData("mat1", 1, new Date(), 0, 23, 1,
+				"password");
+		ArrayList<Boolean> slots = new ArrayList<Boolean>();
+
 		Matt mat1 = new Matt();
-		mat1.data=mData;
+		mat1.data = mData;
 		mat1.slots = slots;
-		for(int i=0; i<94; i++){
-			slots.add((int)(Math.random()*2)==0?false:true);
-		}
-		
-		List<Matt> matts=new ArrayList<Matt>();
+		for (int i = 0; i < 94; i++) {
+			slots.add((int) (Math.random() * 2) == 0 ? false : true);
+		} 
+		List<Matt> matts = new ArrayList<Matt>();
 		matts.add(mat1);
-		
+
+		// creating new Google Calendar
 		client = new com.google.api.services.calendar.Calendar.Builder(
 				httpTransport, jsonFactory, credential).setApplicationName(
 				APP_NAME).build();
-		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat100")).execute(); 
-		 setMatCalendar1(null, null, matts);
- 
+		ourCalendar = client.calendars()
+				.insert(new Calendar().setSummary("My-Available-Time"))
+				.execute();
+		
+		//setting MatCalendar to Google
+		setMatCalendar1(null, null, matts);
 	}
 
 	@Override
 	public void setMatCalendar(String username, String[] snNames,
-			List<Matt> matts) {}
-	 
+			List<Matt> matts) {
+	}
+
 	public static void setMatCalendar1(String username, String[] snNames,
 			List<Matt> matts) {
 		long minPoint = Long.MAX_VALUE;
@@ -98,25 +103,26 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		long start = 0;
 		long end = 0;
 		int size = matts.size();
-		MattInfo mattInfo = null;
+
 		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
 		for (int i = 0; i < size; i++) {
 			Matt matt = matts.get(i);
 			minPoint = ((start = getStartPoint(matt)) < minPoint) ? start
 					: minPoint;
 			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
-			System.out.println(start+" "+end);
-			listMattInfo.add(new MattInfo((int)( start /( 30 * 60 * 1000)),
-					(int)( end / (30 * 60 * 1000)), matt.slots));
+			listMattInfo.add(new MattInfo((int) (start / (30 * 60 * 1000)),
+					(int) (end / (30 * 60 * 1000)), matt.slots));
 		}
-		System.out.println(maxPoint+" "+minPoint);
+
 		int resultSize = (int) ((maxPoint - minPoint) / (30 * 60 * 1000));
-		System.out.println(resultSize);
+
 		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		for(int i=0; i<resultSize; i++)
+		for (int i = 0; i < resultSize; i++)
 			resultSlots.add(false);
+
 		MattInfo result = new MattInfo((int) (minPoint / (30 * 60 * 1000)),
-				(int) (maxPoint /( 30 * 60 * 1000)), resultSlots);
+				(int) (maxPoint / (30 * 60 * 1000)), resultSlots);
+
 		for (int i = 0; i < resultSize; i++) {
 			for (int j = 0; j < size; j++) {
 				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
@@ -128,13 +134,13 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				}
 			}
 		}
-		int startPoint = result.endPoint;
+		 
+		long startPoint = result.endPoint;
 		for (Boolean slot : result.slots) {
 			if (slot) {
 				try {
-					addEvent(ourCalendar,  startPoint);
+					addEvent(ourCalendar, startPoint);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -153,27 +159,24 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				+ (matt.data.nDays * 24 + matt.data.endHour) * 60 * 60 * 1000;
 	}
 
- 
 	private static Calendar updateCalendar(Calendar calendar)
-			throws IOException {
-		View.header("Update Calendar");
+			throws IOException { 
 		Calendar entry = new Calendar();
 		entry.setSummary("Updated Calendar for Testing");
 		Calendar result = client.calendars().patch(calendar.getId(), entry)
-				.execute();
-		View.display(result);
+				.execute(); 
 		return result;
 	}
 
-	private static void addEvent(Calendar calendar, int startPoint) throws IOException {
-		 
-		Event event = newEvent( startPoint);
+	private static void addEvent(Calendar calendar, long startPoint)
+			throws IOException {
+
+		Event event = newEvent(startPoint);
 		Event result = client.events().insert(calendar.getId(), event)
 				.execute();
-		View.display(result);
 	}
 
-	private static Event newEvent(int startPoint) {
+	private static Event newEvent(long startPoint) {
 		Event event = new Event();
 		event.setSummary("Reserved time");
 		Date startDate = new Date(startPoint * 1800000);
