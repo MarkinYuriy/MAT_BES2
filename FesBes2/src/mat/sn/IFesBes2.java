@@ -8,7 +8,6 @@ public interface IFesBes2 {
     boolean addContactToCircle(String circleName, String contact, String username);
     boolean removeContactFromCircle(String circleName, String contact, String userName);
     boolean shareByGoogle(String urlMatt, String circleName, String userName );
-    boolean removeCircle(String circleName, String username);
 
     void addToken(String userName, String sn, String token);
     String getToken(String userName, String sn);

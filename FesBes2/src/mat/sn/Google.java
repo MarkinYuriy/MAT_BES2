@@ -74,10 +74,5 @@ public class Google extends SocialNetworks {
     public boolean shareByGoogle(String urlMatt, String circleName, String userName) {
         return false;
     }
-
-    @Override
-    public boolean removeCircle(String circleName, String username) {
-        return false;
-    }
 }
 
