@@ -24,8 +24,8 @@ public class Google extends SocialNetworks {
         LinkedList<String> contacts = new LinkedList<String>();
 
         try {
-            gmailService.setHeader("Authorization", "Bearer " + token.getToken());
-            gmailService.setUserToken(token.getToken());//setting credentials according to token received
+            gmailService.setHeader("Authorization", "Bearer " + token.getAccessToken());
+            gmailService.setUserToken(token.getAccessToken());//setting credentials according to token received
             URL feedUrl = new URL(gmailRequestURL);//forming full URL request for current user
             ContactFeed feeds = gmailService.getFeed(feedUrl, ContactFeed.class);//getting contacts full info
             //getting emails from contacts info

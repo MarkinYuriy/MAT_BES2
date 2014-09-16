@@ -8,24 +8,20 @@ import java.util.HashMap;
 
 public abstract class SocialNetworks implements IFesBes2 {
     //must contain MAT user's user name (email) as a key and user's social networks tokens
-    private static HashMap<String, HashMap<String, TokenData[]>> userData =
-            new HashMap<String, HashMap<String, TokenData[]>>();
+    private static HashMap<String, HashMap<String, TokenData>> userData =
+            new HashMap<String, HashMap<String, TokenData>>();
 
     protected static final String APPLICATION_NAME = "MyAvailableTime";
-    protected static final int ACCESS_TOKEN = 0;
-    protected static final int REFRESH_TOKEN = 1;
 
     @Override
     public boolean setToken(String username, String socialName, String accessToken, String refreshToken) {
         if (username == null || socialName == null || accessToken == null || refreshToken == null)
             return false;
-        HashMap<String, TokenData[]> socialNetworks = userData.get(username);
+        HashMap<String, TokenData> socialNetworks = userData.get(username);
         if (socialNetworks == null) {
-            socialNetworks = new HashMap<String, TokenData[]>();
+            socialNetworks = new HashMap<String, TokenData>();
         }
-        TokenData[] tokens = new TokenData[2];
-        tokens[ACCESS_TOKEN] = new TokenData(accessToken);
-        tokens[REFRESH_TOKEN] = new TokenData(refreshToken);
+        TokenData tokens = new TokenData(accessToken, refreshToken);
         socialNetworks.put(socialName, tokens);
         userData.put(username, socialNetworks);
         return true;
@@ -40,7 +36,7 @@ public abstract class SocialNetworks implements IFesBes2 {
         for (String socialNetwork : socialNames) {
             if (socialNetwork.equals(GOOGLE)) {
                 TokenData token = getToken(username, socialNetwork);
-                if (token.isExpired() && !refreshToken(username, socialNetwork)) {
+                if (token.isExpired() && !refreshToken(token)) {
                     return null;
                 }
                 return  (new Google()).getContacts(token);
@@ -50,11 +46,11 @@ public abstract class SocialNetworks implements IFesBes2 {
     }
 
     private TokenData getToken(String username, String socialName) {
-        return userData.get(username).get(socialName)[ACCESS_TOKEN];
+        return userData.get(username).get(socialName);
     }
 
-    private boolean refreshToken(String userName, String socialName){
-        return true;
+    private boolean refreshToken(TokenData token){
+        return token.refreshToken();
     }
 
 }
