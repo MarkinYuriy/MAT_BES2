@@ -4,11 +4,11 @@ public interface IFesBes2 {
     /* *********************************************** */
     //PROTOCOL CONSTANTS
     //social networks names
-    public static final String GOOGLE = "google";
-    public static final String APPLE = "apple";
-    public static final String TWITTER = "twitter";
-    public static final String FACEBOOK = "facebook";
-    public static final String WINDOWS = "windows";
+    public static final String GOOGLE = "Google";
+    public static final String APPLE = "Apple";
+    public static final String TWITTER = "Twitter";
+    public static final String FACEBOOK = "Facebook";
+    public static final String WINDOWS = "Windows";
     /* ********************************************** */
 
     String[] getContacts(String username, String[] socialNames);//assuming Google
