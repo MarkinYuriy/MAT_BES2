@@ -135,11 +135,14 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		MattInfo result = new MattInfo((minPoint / (30 * 60 * 1000)),(maxPoint /( 30 * 60 * 1000)), resultSlots);
 		for (int i = 0; i < resultSize; i++) {
 			for (int j = 0; j < size; j++) {
-				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
-						&& (result.startPoint + i) <= listMattInfo.get(j).endPoint) {
+				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint && (result.startPoint + i) <= listMattInfo.get(j).endPoint) {
 					if ((listMattInfo.get(j)).slots.get(i)) {
-						resultSlots.set(i, true);
+						resultSlots.set(i, false);
 						break;
+					}
+					else
+					{
+						resultSlots.set(i, true);
 					}
 				}
 			}
