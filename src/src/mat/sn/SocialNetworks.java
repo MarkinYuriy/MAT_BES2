@@ -7,18 +7,54 @@ package mat.sn;
 import java.util.HashMap;
 
 public abstract class SocialNetworks implements IFesBes2 {
-    //must contain MAT user's user name (email) as a key and user's social networks information
-    private static HashMap<String, HashMap<String, String>> users = new HashMap<String, HashMap<String, String>>();
+    //must contain MAT user's user name (email) as a key and user's social networks tokens
+    private static HashMap<String, HashMap<String, TokenData[]>> userData =
+            new HashMap<String, HashMap<String, TokenData[]>>();
+
+    protected static final String APPLICATION_NAME = "MyAvailableTime";
+    protected static final int ACCESS_TOKEN = 0;
+    protected static final int REFRESH_TOKEN = 1;
 
     @Override
-    public void addToken(String userName, String sn, String token) {
-        HashMap<String, String> social_networks = new HashMap<String, String>();
-        social_networks.put(sn, token);
-        users.put(userName, social_networks);
+    public boolean setToken(String username, String socialName, String accessToken, String refreshToken) {
+        if (username == null || socialName == null || accessToken == null || refreshToken == null)
+            return false;
+        HashMap<String, TokenData[]> socialNetworks = userData.get(username);
+        if (socialNetworks == null) {
+            socialNetworks = new HashMap<String, TokenData[]>();
+        }
+        TokenData[] tokens = new TokenData[2];
+        tokens[ACCESS_TOKEN] = new TokenData(accessToken);
+        tokens[REFRESH_TOKEN] = new TokenData(refreshToken);
+        socialNetworks.put(socialName, tokens);
+        userData.put(username, socialNetworks);
+        return true;
     }
 
     @Override
-    public String getToken(String userName, String sn) {
-        return users.get(userName).get(sn);
+    public String[] getContacts(String username, String[] socialNames) {
+        /*
+        Created by Oleg Braginsky 26/09/14
+        Method allows to get all email-contacts from user's social networks account by token.
+        */
+        for (String socialNetwork : socialNames) {
+            if (socialNetwork.equals(GOOGLE)) {
+                TokenData token = getToken(username, socialNetwork);
+                if (token.isExpired() && !refreshToken(username, socialNetwork)) {
+                    return null;
+                }
+                return  (new Google()).getContacts(token);
+            }
+        }
+        return null;
     }
+
+    private TokenData getToken(String username, String socialName) {
+        return userData.get(username).get(socialName)[ACCESS_TOKEN];
+    }
+
+    private boolean refreshToken(String userName, String socialName){
+        return true;
+    }
+
 }

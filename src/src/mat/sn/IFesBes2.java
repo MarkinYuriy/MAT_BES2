@@ -1,14 +1,19 @@
 package mat.sn;
 
 public interface IFesBes2 {
-    String [] getContacts(String username, String mailServer);
-    boolean shareByMail(String urlMatt, String[] contacts, String userName);
-    String [] getContactsGooglePlus(String circleName, String username);
-    boolean createCircle(String circleName, String username);
-    boolean addContactToCircle(String circleName, String contact, String username);
-    boolean removeContactFromCircle(String circleName, String contact, String userName);
-    boolean shareByGoogle(String urlMatt, String circleName, String userName );
+    /* *********************************************** */
+    //PROTOCOL CONSTANTS
+    //social networks names
+    public static final String GOOGLE = "google";
+    public static final String APPLE = "apple";
+    public static final String TWITTER = "twitter";
+    public static final String FACEBOOK = "facebook";
+    public static final String WINDOWS = "windows";
+    /* ********************************************** */
 
-    void addToken(String userName, String sn, String token);
-    String getToken(String userName, String sn);
+    String[] getContacts(String username, String[] socialNames);//assuming Google
+    boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName);
+
+    String[] getAuthorizedSocialNames(String username);
+    boolean setToken(String username, String socialName, String accessToken, String refreshToken);
 }
