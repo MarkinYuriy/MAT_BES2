@@ -11,6 +11,6 @@ public interface IFesBes2 {
     boolean removeCircle(String circleName, String username);
 
     void addToken(String userName, String sn, String token);
-    String getToken(String userName);
+    String getToken(String userName, String mailServer);
 }
 

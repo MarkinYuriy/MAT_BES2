@@ -1,25 +1,58 @@
 package mat.sn;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson.JacksonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
 
 @Controller
 public class WebService {
-//    static {
-//        try {
-//            Reader reader = new FileReader("/Users/broleg/Dropbox/TelRan/MAT_Project/GoogleClient/client_secrets.json");
-//            clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, reader);
-//        } catch (IOException e) {
-//            throw new Error("No client_secrets.json found", e);
-//        }
-//    }
-//    private static final String CLIENT_ID = clientSecrets.getWeb().getClientId();
-//    private static final String CLIENT_SECRET = clientSecrets.getWeb().getClientSecret();
+    /*
+       * Default HTTP transport to use to make HTTP requests.
+       */
+    private static final HttpTransport TRANSPORT = new NetHttpTransport();
+
+    /*
+     * Default JSON factory to use to deserialize JSON.
+     */
+    private static final JacksonFactory JSON_FACTORY = new JacksonFactory();
+
+    /*
+     * Creates a client secrets object from the client_secrets.json file.
+     */
+    private static GoogleClientSecrets clientSecrets;
+
+    static {
+        try {
+            Reader reader = new FileReader("/Users/broleg/Dropbox/TelRan/MAT_Project/GoogleClient/client_secrets.json");
+            clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, reader);
+        } catch (IOException e) {
+            throw new Error("No client_secrets.json found", e);
+        }
+    }
+
+    /*
+     * This is the Client ID that you generated in the API Console.
+     */
+    private static final String CLIENT_ID = clientSecrets.getWeb().getClientId();
+
+    /*
+     * This is the Client Secret that you generated in the API Console.
+     */
+    private static final String CLIENT_SECRET = clientSecrets.getWeb().getClientSecret();
+
 
     @Autowired
     IFesBes2 google;
@@ -28,25 +61,41 @@ public class WebService {
 
     @RequestMapping({"/"})
     public String homeMethod(Model model) {
-        return "home";
+        return "signin";
     }
 
     @RequestMapping({"/login"})
     public String login(HttpServletRequest request, Model model) throws IOException {
-        String token = request.getParameter("token");
-        google.addToken(username, mailServer, token);
-        return "home";
+        String code = request.getParameter("token");
+        ArrayList<String> scopes = new ArrayList<String>();
+        scopes.add("https://www.googleapis.com/auth/plus.login");
+        scopes.add("https://www.google.com/m8/feeds");
+//        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(TRANSPORT,
+//                JSON_FACTORY, CLIENT_ID, CLIENT_SECRET, scopes).setAccessType("offline").setApprovalPrompt("force").build();
+//        TokenRequest req = flow.newTokenRequest(code);
+//        TokenResponse tokenResponse =
+//                new GoogleAuthorizationCodeTokenRequest(TRANSPORT, JSON_FACTORY,
+//                        CLIENT_ID, CLIENT_SECRET, code, "postmessage").setScopes(scopes).execute();
+        GoogleTokenResponse tokenResponse =
+                new GoogleAuthorizationCodeTokenRequest(TRANSPORT, JSON_FACTORY,
+                        CLIENT_ID, CLIENT_SECRET, code, "postmessage").setScopes(scopes).execute();
+        String access_token = tokenResponse.getAccessToken();
+        String refresh_token = tokenResponse.getRefreshToken();
+        google.addToken(username, mailServer, refresh_token);
+        return "signin";
     }
 
     @RequestMapping({"/contacts"})
     public String getContacts(Model model) {
-        String[] contacts = google.getContacts(username, mailServer);
-        StringBuilder buffer = new StringBuilder();
-        for (String contact : contacts) {
-            buffer.append(contact);
-            buffer.append("<br>");
-        }
-        model.addAttribute("contacts", buffer);
+        String token = google.getToken(username, mailServer);
+        model.addAttribute("contacts", token);
+//        String[] contacts = google.getContacts(username, mailServer);
+//        StringBuilder buffer = new StringBuilder();
+//        for (String contact : contacts) {
+//            buffer.append(contact);
+//            buffer.append("<br>");
+//        }
+//        model.addAttribute("contacts", buffer);
         return "contacts_form";
     }
 }
