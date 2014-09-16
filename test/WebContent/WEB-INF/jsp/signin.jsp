@@ -43,14 +43,16 @@
 
     function login()
     {
-        var myParams = {
+        var params = {
             'clientid' : '830872460833-bq38m67qbe2iqk60pjlab70oih7vld8v.apps.googleusercontent.com',
+            'client_secret' : 'BEH6NhFjH_KFRxY7N0BspfNY',
             'cookiepolicy' : 'single_host_origin',
             'callback' : 'loginCallback',
-            'approvalprompt':'force',
-            'scope' : 'https://www.googleapis.com/auth/plus.login https://www.google.com/m8/feeds'
+            'accesstype' : 'offline',
+            'approvalprompt' : 'force',
+            'scope' : 'https://www.googleapis.com/auth/plus.login https://www.google.com/m8/feeds',
         };
-        gapi.auth.signIn(myParams);
+        gapi.auth.signIn(params);
     }
 
     function loginCallback(result)
@@ -84,7 +86,8 @@
 
         if(result['status']['signed_in'])
         {
-            document.getElementById('result_form_token').value=result['access_token'];
+
+            document.getElementById('result_form_token').value=result['code'];
             document.getElementById('result_form').submit();
         }
 
