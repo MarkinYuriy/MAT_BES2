@@ -26,10 +26,9 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	private static final List<String> SCOPE = Arrays
 			.asList("https://www.googleapis.com/auth/calendar");
 	private static final String APP_NAME = "Calendar API Quickstart";
-	private static final String USER = "vasya.beersheva@gmail.com";
-	private static final String CLIENT_SECRET_PATH = "D:/TEL-RAN/Workspace_java/MattProject/src/client_secret.json";
+	private static final String USER = "natalia.sheshukov@gmail.com";
+	private static final String CLIENT_SECRET_PATH = "C:/Users/Natalia/workspace/GmailQuick/src/client_secrets.json";
 	private static GoogleClientSecrets clientSecrets;
-
 	private static Calendar ourCalendar;
 
 	@Override
@@ -65,83 +64,109 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				.execute();
 		GoogleCredential credential = new GoogleCredential()
 				.setFromTokenResponse(response);
-		//creating Matts
-		MattData mData= new MattData("mat1", 1, new Date(), 0, 23, 1, "password");
-		ArrayList<Boolean> slots = new ArrayList<Boolean> ();
-		
+		// creating Matts
+		MattData mData = new MattData("mat1", 1, new Date(), 8, 17, 1,
+				"password");
+		ArrayList<Boolean> slots = new ArrayList<Boolean>();
+
 		Matt mat1 = new Matt();
-		mat1.data=mData;
+		mat1.data = mData;
 		mat1.slots = slots;
-		for(int i=0; i<94; i++){
-			slots.add((int)(Math.random()*2)==0?false:true);
+		for (int i = 0; i < 94; i++) {
+			slots.add((int) (Math.random() * 2) == 0 ? false : true);
 		}
-		
-		List<Matt> matts=new ArrayList<Matt>();
+
+		List<Matt> matts = new ArrayList<Matt>();
 		matts.add(mat1);
-		
+
 		client = new com.google.api.services.calendar.Calendar.Builder(
 				httpTransport, jsonFactory, credential).setApplicationName(
 				APP_NAME).build();
-		 ourCalendar = client.calendars().insert(new Calendar().setSummary("Mat100")).execute(); 
-		 setMatCalendar1(null, null, matts);
- 
+		ourCalendar = client.calendars()
+				.insert(new Calendar().setSummary("Mat99")).execute();
+		setMatCalendar1(null, null, matts);
+
 	}
 
 	@Override
 	public void setMatCalendar(String username, String[] snNames,
-			List<Matt> matts) {}
-	 
+			List<Matt> matts) {
+	}
+
 	public static void setMatCalendar1(String username, String[] snNames,
 			List<Matt> matts) {
 		long minPoint = Long.MAX_VALUE;
 		long maxPoint = 0;
 		long start = 0;
 		long end = 0;
+		int slotsInHour = 2;
 		int size = matts.size();
-		MattInfo mattInfo = null;
 		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
 		for (int i = 0; i < size; i++) {
 			Matt matt = matts.get(i);
+
 			minPoint = ((start = getStartPoint(matt)) < minPoint) ? start
 					: minPoint;
 			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
-			System.out.println(start+" "+end);
-			long startSlot = start /( 30 * 60 * 1000);
-			long endSlot = end / (30 * 60 * 1000);
+
+			// System.out.println(start+" "+end);
+			long startSlot = start / ((60 / slotsInHour) * 60 * 1000);
+			long endSlot = end / ((60 / slotsInHour) * 60 * 1000);
 			int slotSize = (int) (endSlot - startSlot);
+
 			ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
-			int intervals = (matt.data.endHour - matt.data.startHour) * 2;
+
+			int intervals = (matt.data.endHour - matt.data.startHour)
+					* slotsInHour;
 			if (intervals != 0) {
 				for (int slot = 0, srcSlot = 0; slot < slotSize; slot++) {
-					if (slot % 48 > intervals) {
+					if (slot % (24 * slotsInHour) > intervals) {
 						mattInfoSlots.add(false);
 					} else {
-						mattInfoSlots.add(matt.slots.get(srcSlot++));
+						for (int j = 0; j < (matt.data.timeSlot == 1 ? 1
+								: slotsInHour); j++)// it will be better to change
+													// matt.data.timeSlot from 0/1 to
+													// number of matt.data.slotsInHour
+							mattInfoSlots.add(matt.slots.get(srcSlot));
+						srcSlot++;
 					}
 				}
 			} else {
-				mattInfoSlots = matt.slots;
+				if (matt.data.timeSlot == 1)// it will be better to change
+											// matt.data.timeSlot from 0/1 to
+											// number of matt.data.slotsInHour
+					mattInfoSlots = matt.slots;
+				else {
+					for (int slot = 0; slot < matt.slots.size(); slot++) {
+						for (int j = 0; j < slotsInHour; j++)
+							mattInfoSlots.add(matt.slots.get(slot));
+					}
+				}
 			}
-
 			// a need to add proper slots data
-			listMattInfo.add(new MattInfo(startSlot, endSlot, mattInfoSlots));
+			listMattInfo.add(new MattInfo(startSlot, endSlot, mattInfoSlots,
+					slotsInHour));
 		}
-		System.out.println(maxPoint+" "+minPoint);
-		long resultSize = (maxPoint - minPoint) / (30 * 60 * 1000);
-		System.out.println(resultSize);
+		//System.out.println(maxPoint + " " + minPoint);
+		long resultSize = (maxPoint - minPoint)
+				/ ((60 / slotsInHour) * 60 * 1000);
+		//System.out.println(resultSize);
 		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		for(long i=0; i<resultSize; i++)
+		for (long i = 0; i < resultSize; i++)
 			resultSlots.add(false);
-		MattInfo result = new MattInfo((minPoint / (30 * 60 * 1000)),(maxPoint /( 30 * 60 * 1000)), resultSlots);
+		MattInfo result = new MattInfo(
+				(minPoint / ((60 / slotsInHour) * 60 * 1000)),
+				(maxPoint / ((60 / slotsInHour) * 60 * 1000)),
+				resultSlots, slotsInHour);
+
 		for (int i = 0; i < resultSize; i++) {
 			for (int j = 0; j < size; j++) {
-				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint && (result.startPoint + i) <= listMattInfo.get(j).endPoint) {
+				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
+						&& (result.startPoint + i) <= listMattInfo.get(j).endPoint) {
 					if ((listMattInfo.get(j)).slots.get(i)) {
 						resultSlots.set(i, false);
 						break;
-					}
-					else
-					{
+					} else {
 						resultSlots.set(i, true);
 					}
 				}
@@ -151,7 +176,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		for (Boolean slot : result.slots) {
 			if (slot) {
 				try {
-					addEvent(ourCalendar,  startPoint);
+					addEvent(ourCalendar, startPoint);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -168,28 +193,31 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	}
 
 	private static long getEndPoint(Matt matt) {
-//		return matt.data.startDate.getTime() + (matt.data.nDays * 24 + matt.data.endHour) * 60 * 60 * 1000;
-		return matt.data.startDate.getTime() + ((matt.data.nDays-1) * 24 + matt.data.endHour) * 60 * 60 * 1000;
+		// return matt.data.startDate.getTime() + (matt.data.nDays * 24 +
+		// matt.data.endHour) * 60 * 60 * 1000;
+		return matt.data.startDate.getTime()
+				+ ((matt.data.nDays - 1) * 24 + matt.data.endHour) * 60 * 60
+				* 1000;
 	}
 
- 
 	private static Calendar updateCalendar(Calendar calendar)
 			throws IOException {
-//		View.header("Update Calendar");
+		// View.header("Update Calendar");
 		Calendar entry = new Calendar();
 		entry.setSummary("Updated Calendar for Testing");
 		Calendar result = client.calendars().patch(calendar.getId(), entry)
 				.execute();
-//		View.display(result);
+		// View.display(result);
 		return result;
 	}
 
-	private static void addEvent(Calendar calendar, long startPoint) throws IOException {
-		 
-		Event event = newEvent( startPoint);
+	private static void addEvent(Calendar calendar, long startPoint)
+			throws IOException {
+
+		Event event = newEvent(startPoint);
 		Event result = client.events().insert(calendar.getId(), event)
 				.execute();
-//		View.display(result);
+		// View.display(result);
 	}
 
 	private static Event newEvent(long startPoint) {
