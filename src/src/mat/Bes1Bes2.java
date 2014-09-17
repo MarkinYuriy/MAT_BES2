@@ -1,10 +1,16 @@
 package mat;
 
 import java.io.BufferedReader;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.TimeZone;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -17,8 +23,11 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Calendar;
+import com.google.api.services.calendar.model.CalendarList;
+import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 
 public class Bes1Bes2 implements IBes1Bes2 {
 	private static com.google.api.services.calendar.Calendar client;
@@ -30,13 +39,82 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	private static final String CLIENT_SECRET_PATH = "C:/Users/Natalia/workspace/GmailQuick/src/client_secrets.json";
 	private static GoogleClientSecrets clientSecrets;
 	private static Calendar ourCalendar;
+	private static GoogleCredential credential;
 
-	@Override
-	public List<Boolean> getSlots(String username, String[] snNames,
-			MattData interval) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public static List<Boolean> getSlots1(String username, String[] snName, MattData interval) throws IOException {
+		int dayInterval=(interval.getEndHour()-interval.getStartHour())*(60/interval.getTimeSlot());
+		ArrayList<Boolean> currentSlots = new ArrayList<Boolean>();
+		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
+		String pageToken = null;
+		CalendarList calendarList  = null;
+		com.google.api.services.calendar.Calendar service = null;
+		String idCalendar = null;
+		DateTime startResponse = null;
+		DateTime endResponse = null;
+		Events events = null;
+		long startDate2 = interval.getStartDate().getTime() + interval.getStartHour() * 60 * 60 * 1000;
+		startResponse = new DateTime(startDate2);
+		
+		long endDate2 = startDate2 + (interval.getnDays() - 1) * 24 + (interval.getEndHour()+1) * 60 * 60 * 1000;
+		endResponse = new DateTime(endDate2);
+
+		long startSlot = startDate2 / ((interval.getTimeSlot() * 60 * 1000));
+		long endSlot = endDate2 / ((interval.getTimeSlot() * 60 * 1000));
+		System.out.println(startSlot+" "+endSlot);
+		long resultSize= endSlot-startSlot;
+		for (long i = 0; i < resultSize; i++)
+			currentSlots.add(false);
+		
+		long currentSlot=startSlot;
+		do {
+		  try {
+			calendarList = client.calendarList().list().execute();
+					
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+			List<CalendarListEntry> items = calendarList.getItems();
+			Boolean flagFull=false;
+			while (currentSlot <= endSlot) {
+				for (CalendarListEntry calendarListEntry : items) {
+					if(flagFull)break;
+					idCalendar = calendarListEntry.getId();
+					events = client.events().list(idCalendar).setTimeMin(startResponse).setTimeMax(endResponse).execute();
+					List<Event> listEvents = events.getItems();
+					
+					for (Event event : listEvents) {
+						
+						 System.out.println(event.getSummary());
+				         System.out.println(event.getId());
+				         System.out.println(event.getStart().getDateTime());
+				         System.out.println(event.getEnd().getDateTime());
+
+						if(flagFull)break;
+						long startEvent = (event.getStart().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
+						long endEvent = (event.getEnd().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
+						
+						while (currentSlot >= startEvent && currentSlot <= endEvent && currentSlot < endSlot) {
+							currentSlots.set((int)(currentSlot-startSlot), true);
+							currentSlot++;
+							if(currentSlot>endSlot)flagFull=true;
+						}
+					}
+				}
+				currentSlot++;
+			}
+			for(int index=0; index<resultSize; ){
+					resultSlots.addAll(currentSlots.subList(index, index+dayInterval));
+					index=index+24*(60/interval.timeSlot);
+			}
+		  pageToken = events.getNextPageToken();
+		  	
+		
+		  } while (pageToken != null);
+		
+			
+		return resultSlots;
+		}
 
 	public static void main(String[] args) throws Exception {
 		HttpTransport httpTransport = new NetHttpTransport();
@@ -62,12 +140,18 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		GoogleTokenResponse response = flow.newTokenRequest(code)
 				.setRedirectUri(GoogleOAuthConstants.OOB_REDIRECT_URI)
 				.execute();
-		GoogleCredential credential = new GoogleCredential()
+		 credential = new GoogleCredential()
 				.setFromTokenResponse(response);
 		// creating Matts
-		MattData mData = new MattData("mat1", 1, new Date(), 8, 17, 1,
+		 
+		 GregorianCalendar cld = new GregorianCalendar(2014, 8, 18, 0, 0);
+		 System.out.println(cld);
+		 Date d=new Date(cld.getTimeInMillis());
+		 MattData mData = new MattData("mat1", 1, d, 8, 17, 30,
 				"password");
-		ArrayList<Boolean> slots = new ArrayList<Boolean>();
+		 System.out.println(d+" "+"from" +" "+8+" "+"till"+" "+17);
+		 
+	/*	ArrayList<Boolean> slots = new ArrayList<Boolean>();
 
 		Matt mat1 = new Matt();
 		mat1.data = mData;
@@ -77,14 +161,18 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		}
 
 		List<Matt> matts = new ArrayList<Matt>();
-		matts.add(mat1);
+		matts.add(mat1);*/
 
 		client = new com.google.api.services.calendar.Calendar.Builder(
 				httpTransport, jsonFactory, credential).setApplicationName(
 				APP_NAME).build();
-		ourCalendar = client.calendars()
+		
+		/*ourCalendar = client.calendars()
 				.insert(new Calendar().setSummary("Mat99")).execute();
-		setMatCalendar1(null, null, matts);
+		setMatCalendar1(null, null, matts);*/
+		
+		List<Boolean> Slots = getSlots1(null,null,mData);
+		System.out.println(Slots.toString());
 
 	}
 
@@ -110,8 +198,8 @@ public class Bes1Bes2 implements IBes1Bes2 {
 			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
 
 			// System.out.println(start+" "+end);
-			long startSlot = start / ((60 / slotsInHour) * 60 * 1000);
-			long endSlot = end / ((60 / slotsInHour) * 60 * 1000);
+			long startSlot = start / ((matt.data.getTimeSlot()) * 60 * 1000);
+			long endSlot = end / ((matt.data.getTimeSlot()) * 60 * 1000);
 			int slotSize = (int) (endSlot - startSlot);
 
 			ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
@@ -120,7 +208,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 					* slotsInHour;
 			if (intervals != 0) {
 				for (int slot = 0, srcSlot = 0; slot < slotSize; slot++) {
-					if (slot % (24 * slotsInHour) > intervals) {
+					if (slot % (24 * (60/matt.data.getTimeSlot())) > intervals) {
 						mattInfoSlots.add(false);
 					} else {
 						for (int j = 0; j < (matt.data.timeSlot == 1 ? 1
@@ -231,5 +319,12 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		DateTime end = new DateTime(endDate, TimeZone.getTimeZone("UTC"));
 		event.setEnd(new EventDateTime().setDateTime(end));
 		return event;
+	}
+
+	@Override
+	public List<Boolean> getSlots(String username, String[] snNames,
+			MattData interval) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
