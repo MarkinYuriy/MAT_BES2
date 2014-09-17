@@ -19,62 +19,69 @@ import java.util.ArrayList;
 
 @Controller
 public class WebService {
-    /*
-       * Default HTTP transport to use to make HTTP requests.
-       */
+    //Default HTTP transport to use to make HTTP requests.
     private static final HttpTransport TRANSPORT = new NetHttpTransport();
 
-    /*
-     * Default JSON factory to use to deserialize JSON.
-     */
+    //Default JSON factory to use to deserialize JSON.
     private static final JacksonFactory JSON_FACTORY = new JacksonFactory();
 
-    /*
-     * Creates a client secrets object from the client_secrets.json file.
-     */
+    //Creates a client secrets object from the client_secrets.json file.
     private static GoogleClientSecrets clientSecrets;
 
+    //Collection of scopes to work with
+    private static ArrayList<String> scopes = new ArrayList<String>();
+
+    //Prepare needed information
     static {
         try {
+            //Read json file to get client secrets data
             Reader reader = new FileReader("/Users/broleg/Dropbox/TelRan/MAT_Project/GoogleClient/client_secrets.json");
             clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, reader);
         } catch (IOException e) {
             throw new Error("No client_secrets.json found", e);
         }
+        //prepare needed scopes
+        scopes.add("https://www.googleapis.com/auth/plus.login");//scope for google authorization
+        scopes.add("https://www.google.com/m8/feeds");//scope for working with gmail (read/write)
+        scopes.add("https://www.googleapis.com/auth/calendar");//scope for working with calendars (read/write)
     }
 
-    /*
-     * This is the Client ID that you generated in the API Console.
-     */
     private static final String CLIENT_ID = clientSecrets.getWeb().getClientId();
-
-    /*
-     * This is the Client Secret that you generated in the API Console.
-     */
     private static final String CLIENT_SECRET = clientSecrets.getWeb().getClientSecret();
-
 
     @Autowired
     IFesBes2 google;
-    private static final String username = "gobrol@gmail.com";
+    private static final String username = "user@server.com";
 
     @RequestMapping({"/"})
     public String homeMethod(Model model) {
+        StringBuffer scopes_buffer = new StringBuffer();
+        for (String scope: scopes) {
+            scopes_buffer.append(scope);
+            scopes_buffer.append(" ");
+        }
+        //Add attributes to read from google_signin.jsp
+        model.addAttribute("id", CLIENT_ID);
+        model.addAttribute("secret", CLIENT_SECRET);
+        model.addAttribute("scopes", scopes_buffer);
+
         return "google_signin";
     }
 
     @RequestMapping({"/login"})
     public String login(HttpServletRequest request, Model model) throws IOException {
-        String code = request.getParameter("token");
-        ArrayList<String> scopes = new ArrayList<String>();
-        scopes.add("https://www.googleapis.com/auth/plus.login");
-        scopes.add("https://www.google.com/m8/feeds");
-        GoogleTokenResponse tokenResponse =
-                new GoogleAuthorizationCodeTokenRequest(TRANSPORT, JSON_FACTORY,
-                        CLIENT_ID, CLIENT_SECRET, code, "postmessage").setScopes(scopes).execute();
-        String access_token = tokenResponse.getAccessToken();
-        String refresh_token = tokenResponse.getRefreshToken();
-        google.setToken(username, IFesBes2.GOOGLE, access_token, refresh_token);
+        //Receive google authorization code from jsp
+        String code = request.getParameter("code");
+        if (code!=null) {
+            //Upgrade the authorization code into an access and refresh token.
+            GoogleTokenResponse tokenResponse =
+                    new GoogleAuthorizationCodeTokenRequest(TRANSPORT, JSON_FACTORY, CLIENT_ID,
+                            CLIENT_SECRET, code, "postmessage").setScopes(scopes).execute();
+            String access_token = tokenResponse.getAccessToken();
+            String refresh_token = tokenResponse.getRefreshToken();
+            //Store received tokens for later use
+            google.setToken(username, IFesBes2.GOOGLE, access_token, refresh_token);
+        }
         return "google_signin";
     }
 

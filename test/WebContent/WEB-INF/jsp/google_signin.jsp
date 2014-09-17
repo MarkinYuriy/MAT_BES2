@@ -25,7 +25,7 @@
 <input type="button"  value="Logout" onclick="logout()" />
 
 <form id="result_form" action="login" method="post" style="display:none;">
-    <input type="hidden" name="token" id="result_form_token">
+    <input type="hidden" name="code" id="result_form_code">
 </form>
 
 <form id="contacts_form" action="contacts">
@@ -41,27 +41,27 @@
         location.reload();
     }
 
-    function login()
-    {
+    function login() {
         var params = {
-            'clientid' : '830872460833-bq38m67qbe2iqk60pjlab70oih7vld8v.apps.googleusercontent.com',
-            'client_secret' : 'BEH6NhFjH_KFRxY7N0BspfNY',
-            'cookiepolicy' : 'single_host_origin',
-            'callback' : 'loginCallback',
-            'accesstype' : 'offline',
-            'approvalprompt' : 'force',
-            'scope' : 'https://www.googleapis.com/auth/plus.login https://www.google.com/m8/feeds',
+            'clientid': "${id}",
+            'client_secret': "${secret}",
+            'cookiepolicy': 'single_host_origin',
+            'callback': 'loginCallback',
+            'accesstype': 'offline',
+            'approvalprompt': 'force',
+            'scope': "${scopes}"
         };
         gapi.auth.signIn(params);
     }
 
     function loginCallback(result)
     {
-//        Received Json file structure
+//        Received Json file structure example
 //        {
 //            "state": "",
 //                "access_token": "XXXXXXXXXXXXXXXX",
 //                "token_type": "Bearer",
+//                "refresh_token": "XXXXXXXXXXXXXXXX",
 //                "expires_in": "3600",
 //                "code": "XXXXXXXX",
 //                "scope": "",
@@ -87,7 +87,7 @@
         if(result['status']['signed_in'])
         {
 
-            document.getElementById('result_form_token').value=result['code'];
+            document.getElementById('result_form_code').value=result['code'];
             document.getElementById('result_form').submit();
         }
 
@@ -95,8 +95,8 @@
 
     function onLoadCallback()
     {
-        gapi.client.setApiKey('AIzaSyCQQ_w-Axmjz4dNqdaXe5x0oezcnLvAtjI');
-        gapi.client.load('plus', 'v1', function(){});
+//        gapi.client.setApiKey('AIzaSyCQQ_w-Axmjz4dNqdaXe5x0oezcnLvAtjI');
+//        gapi.client.load('plus', 'v1', function(){});
     }
 
 </script>
