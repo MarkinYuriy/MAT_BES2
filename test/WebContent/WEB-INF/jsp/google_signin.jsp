@@ -1,10 +1,7 @@
 <%--
-  Created by IntelliJ IDEA.
-  User: broleg
-  Date: 9/13/14
-  Time: 12:49
-  To change this template use File | Settings | File Templates.
+  Created by Oleg Braginsky on 13/09/14
 --%>
+
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
@@ -16,6 +13,7 @@
             po.src = 'https://apis.google.com/js/client.js?onload=onLoadCallback';
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
         })();
+
     </script>
 </head>
 
