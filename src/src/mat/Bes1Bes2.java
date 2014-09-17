@@ -35,8 +35,8 @@ public class Bes1Bes2 implements IBes1Bes2 {
 	private static final List<String> SCOPE = Arrays
 			.asList("https://www.googleapis.com/auth/calendar");
 	private static final String APP_NAME = "Calendar API Quickstart";
-	private static final String USER = "natalia.sheshukov@gmail.com";
-	private static final String CLIENT_SECRET_PATH = "C:/Users/Natalia/workspace/GmailQuick/src/client_secrets.json";
+	private static final String USER = "vasya.beersheva@gmail.com";
+	private static final String CLIENT_SECRET_PATH = "D:/TEL-RAN/Workspace_java/MattProject/src/client_secret.json";
 	private static GoogleClientSecrets clientSecrets;
 	private static Calendar ourCalendar;
 	private static GoogleCredential credential;
@@ -52,11 +52,16 @@ public class Bes1Bes2 implements IBes1Bes2 {
 		DateTime startResponse = null;
 		DateTime endResponse = null;
 		Events events = null;
+		System.out.println(interval.getStartDate());
 		long startDate2 = interval.getStartDate().getTime() + interval.getStartHour() * 60 * 60 * 1000;
 		startResponse = new DateTime(startDate2);
+		System.out.println(startDate2);
+		System.out.println(startResponse);
 		
-		long endDate2 = startDate2 + (interval.getnDays() - 1) * 24 + (interval.getEndHour()+1) * 60 * 60 * 1000;
+		long endDate2 = interval.getStartDate().getTime() + (interval.getnDays() - 1) * 24 + (interval.getEndHour()) * 60 * 60 * 1000;
 		endResponse = new DateTime(endDate2);
+		System.out.println(endDate2);
+		System.out.println(endResponse);
 
 		long startSlot = startDate2 / ((interval.getTimeSlot() * 60 * 1000));
 		long endSlot = endDate2 / ((interval.getTimeSlot() * 60 * 1000));
@@ -90,14 +95,14 @@ public class Bes1Bes2 implements IBes1Bes2 {
 				         System.out.println(event.getStart().getDateTime());
 				         System.out.println(event.getEnd().getDateTime());
 
-						if(flagFull)break;
+						if(flagFull) break;
 						long startEvent = (event.getStart().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
 						long endEvent = (event.getEnd().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
 						
-						while (currentSlot >= startEvent && currentSlot <= endEvent && currentSlot < endSlot) {
+						while (currentSlot >= startEvent && currentSlot < endEvent && currentSlot < endSlot) {
 							currentSlots.set((int)(currentSlot-startSlot), true);
 							currentSlot++;
-							if(currentSlot>endSlot)flagFull=true;
+							if(currentSlot>endSlot) flagFull=true;
 						}
 					}
 				}
@@ -323,7 +328,7 @@ public class Bes1Bes2 implements IBes1Bes2 {
 
 	@Override
 	public List<Boolean> getSlots(String username, String[] snNames,
-			MattData interval) throws IOException {
+			MattData interval){
 		// TODO Auto-generated method stub
 		return null;
 	}
