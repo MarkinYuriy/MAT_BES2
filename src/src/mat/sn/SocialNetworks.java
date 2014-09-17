@@ -7,11 +7,11 @@ package mat.sn;
 import java.util.HashMap;
 
 public abstract class SocialNetworks implements IFesBes2 {
+    protected static final String APPLICATION_NAME = "MyAvailableTime";
+
     //must contain MAT user's user name (email) as a key and user's social networks tokens
     private static HashMap<String, HashMap<String, TokenData>> userData =
             new HashMap<String, HashMap<String, TokenData>>();
-
-    protected static final String APPLICATION_NAME = "MyAvailableTime";
 
     @Override
     public boolean setToken(String username, String socialName, String accessToken, String refreshToken) {
@@ -29,10 +29,6 @@ public abstract class SocialNetworks implements IFesBes2 {
 
     @Override
     public String[] getContacts(String username, String[] socialNames) {
-        /*
-        Created by Oleg Braginsky 26/09/14
-        Method allows to get all email-contacts from user's social networks account by token.
-        */
         for (String socialNetwork : socialNames) {
             if (socialNetwork.equals(GOOGLE)) {
                 TokenData token = getToken(username, socialNetwork);
