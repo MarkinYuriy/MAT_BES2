@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class SocialNetworks implements IFesBes2 {
+public abstract class SocialNetworks implements IConnector {
     //contains MAT user's user name (email) as a key and user's social networks tokens
     private static HashMap<String, HashMap<String, TokenData>> userData =
             new HashMap<String, HashMap<String, TokenData>>();
@@ -17,28 +17,21 @@ public abstract class SocialNetworks implements IFesBes2 {
 //****************************************************************************************************************
 
     //Method for class reflection. Returns object of class with name received.
-    private SocialNetworks getInstance(String socialNetwork) {
+    private SocialNetworks getInstance(String socialNetwork) throws Exception {
         Class cl = null;
         try {
             return  (SocialNetworks) Class.forName(PACKAGE + socialNetwork).newInstance();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new Exception(socialNetwork + " isn't supported.");
         }
-        return null;
     }
 
     @Override
     //Method for authorize into some social network using class reflection
-    public boolean authorize(String username, String socialName, String authCode) {
+    public boolean authorize(String username, String socialName, String authCode) throws Exception {
         if (username == null || socialName == null || authCode == null)
             return false;
         TokenData token = getInstance(socialName).retrieveToken(authCode);
-        if (token == null)
-            return false;
 
         HashMap<String, TokenData> socialNetworks = userData.get(username);
         if (socialNetworks == null) {
@@ -52,7 +45,7 @@ public abstract class SocialNetworks implements IFesBes2 {
 
     @Override
     //Method for getting contacts from some social network
-    public String[] getContacts(String username, String[] socialNames) {
+    public String[] getContacts(String username, String[] socialNames) throws Exception{
         List<String> contacts = new LinkedList<String>();
         for (String socialNetwork : socialNames) {
             TokenData token = getToken(username, socialNetwork);
@@ -68,7 +61,7 @@ public abstract class SocialNetworks implements IFesBes2 {
 
     @Override
     //Method that provides to front-end server information for some social network login process
-    public String[] getApplicationData(String socialName) {
+    public String[] getApplicationData(String socialName) throws Exception {
         return getInstance(socialName).getApplicationData();
     }
 
@@ -77,7 +70,7 @@ public abstract class SocialNetworks implements IFesBes2 {
     }
 
     //Methods that all the social networks must implement
-    abstract List<String> getContacts(TokenData token);
-    abstract TokenData retrieveToken(String authCode);
+    abstract List<String> getContacts(TokenData token) throws Exception;
+    abstract TokenData retrieveToken(String authCode) throws Exception;
     abstract String[] getApplicationData();
 }

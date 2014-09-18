@@ -6,7 +6,7 @@
 
     <bean id="google" class="org.springframework.remoting.caucho.HessianProxyFactoryBean">
         <property name="serviceUrl" value="http://localhost:8080/sn_service/sn.service"/>
-        <property name="serviceInterface" value="mat.sn.IFesBes2"/>
+        <property name="serviceInterface" value="mat.sn.IConnector"/>
     </bean>
 
 </beans>

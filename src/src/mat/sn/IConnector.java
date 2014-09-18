@@ -1,6 +1,6 @@
 package mat.sn;
 
-public interface IFesBes2 {
+public interface IConnector {
     /* *********************************************** */
     //PROTOCOL CONSTANTS
     //social networks names
@@ -15,10 +15,10 @@ public interface IFesBes2 {
     public static final int INDEX_SCOPES = 1;
     /* ********************************************** */
 
-    String[] getContacts(String username, String[] socialNames);
+    String[] getContacts(String username, String[] socialNames) throws Exception;
     boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName);
 
     String[] getAuthorizedSocialNames(String username);
-    boolean authorize(String username, String socialName, String authCode);
-    String[] getApplicationData(String socialName);
+    boolean authorize(String username, String socialName, String authCode) throws Exception;
+    String[] getApplicationData(String socialName) throws Exception;
 }

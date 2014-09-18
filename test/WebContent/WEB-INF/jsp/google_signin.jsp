@@ -42,7 +42,7 @@
     function login() {
         var params = {
             'clientid': "${id}",
-            'client_secret': "${secret}",
+            <%--'client_secret': "${secret}",--%>
             'cookiepolicy': 'single_host_origin',
             'callback': 'loginCallback',
             'accesstype': 'offline',

@@ -4,12 +4,12 @@
        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     <!-- components of the social networks connection service -->
-    <bean id="google" class="mat.sn.Google"/> <!-- class for books application model -->
+    <bean id="google" class="mat.sn.Google"/> <!-- class for MAT application model -->
 
     <!-- Burlap Service Exporter -->
     <bean id="burlapGoogleService" class="org.springframework.remoting.caucho.HessianServiceExporter">
         <property  name="service" ref="google"/> <!-- reference to the service -->
-        <property name="serviceInterface" value="mat.sn.IFesBes2"/> <!-- interface of the service -->
+        <property name="serviceInterface" value="mat.sn.IConnector"/> <!-- interface of the service -->
     </bean>
 
     <!-- mapping to the application service -->

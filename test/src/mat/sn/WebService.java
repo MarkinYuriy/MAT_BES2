@@ -12,22 +12,26 @@ import java.io.IOException;
 public class WebService {
 
     @Autowired
-    IFesBes2 google;
+    IConnector google;
     private static final String username = "user@server.com";
 
     @RequestMapping({"/"})
     public String homeMethod(Model model) {
-        String[] data = google.getApplicationData(IFesBes2.GOOGLE);
-        String clientID = data[IFesBes2.INDEX_ID];
+        String[] data = new String[0];
+        try {
+            data = google.getApplicationData(IConnector.GOOGLE);
+        } catch (Exception e) {
+            e.getMessage();
+        }
+        String clientID = data[IConnector.INDEX_ID];
         StringBuffer scopes = new StringBuffer();
-        for (int i = IFesBes2.INDEX_SCOPES; i < data.length; i++) {
+        for (int i = IConnector.INDEX_SCOPES; i < data.length; i++) {
             scopes.append(data[i]);
             scopes.append(" ");
         }
 
         //Add attributes to read from google_signin.jsp
         model.addAttribute("id", clientID);
-//        model.addAttribute("secret", CLIENT_SECRET);
         model.addAttribute("scopes", scopes);
 
         return "google_signin";
@@ -38,7 +42,11 @@ public class WebService {
         //Receive google authorization code from jsp and send it to the service
         String code = request.getParameter("code");
         if (code!=null) {
-            google.authorize(username, IFesBes2.GOOGLE, code);
+            try {
+                google.authorize(username, IConnector.GOOGLE, code);
+            } catch (Exception e) {
+                e.getMessage();
+            }
         }
         return "google_signin";
     }
@@ -46,8 +54,14 @@ public class WebService {
     @RequestMapping({"/contacts"})
     public String getContacts(Model model) {
         String[] socialNames = new String[1];
-        socialNames[0] = IFesBes2.GOOGLE;
-        String[] contacts = google.getContacts(username, socialNames);
+        socialNames[0] = IConnector.GOOGLE;
+        String[] contacts = new String[0];
+        try {
+            contacts = google.getContacts(username, socialNames);
+        } catch (Exception e) {
+            model.addAttribute("contacts", e.getMessage());
+            return "contacts_form";
+        }
         StringBuilder buffer = new StringBuilder();
         for (String contact : contacts) {
             buffer.append(contact);
