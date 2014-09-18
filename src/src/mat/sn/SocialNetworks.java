@@ -9,6 +9,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SocialNetworks implements IConnector {
+    protected static final String UNSUPPORTED_SN = " is unsupported social network.";
+    protected static final String AUTH_ERROR = "Authentication failed. Please, try again later.";
+    protected static final String NO_AUTH = "Authentication required.";
+
     //contains MAT user's user name (email) as a key and user's social networks tokens
     private static HashMap<String, HashMap<String, TokenData>> userData =
             new HashMap<String, HashMap<String, TokenData>>();
@@ -22,12 +26,13 @@ public class SocialNetworks implements IConnector {
         try {
             return  (SocialNetwork) Class.forName(PACKAGE + socialNetwork).newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(socialNetwork + UNSUPPORTED_SN);
         }
-        return null;
     }
 
     private String getToken(String username, String socialName) {
+        if (!userData.containsKey(username))
+            throw new SecurityException(NO_AUTH);
         TokenData token = userData.get(username).get(socialName);
         if (token.isExpired()) {
             getInstance(socialName).refreshToken(token);
@@ -54,7 +59,7 @@ public class SocialNetworks implements IConnector {
 
     @Override
     //Method for getting contacts from some social network
-    public String[] getContacts(String username, String[] socialNames){
+    public String[] getContacts(String username, String[] socialNames) {
         List<String> contacts = new LinkedList<String>();
         for (String socialNetwork : socialNames) {
             String accessToken = getToken(username, socialNetwork);

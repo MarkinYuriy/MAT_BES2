@@ -15,10 +15,15 @@ public interface IConnector {
     public static final int INDEX_SCOPES = 1;
     /* ********************************************** */
 
+
+    //May throw unchecked SecurityException or RuntimeException. It is strongly recommended to make try/catch block.
     String[] getContacts(String username, String[] socialNames);
+    //May throw unchecked SecurityException. Strongly recommended to make try/catch block.
     boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName);
 
     String[] getAuthorizedSocialNames(String username);
+    //May throw unchecked SecurityException or RuntimeException. It is strongly recommended to make try/catch block.
     boolean authorize(String username, String socialName, String authCode);
+    //May throw unchecked RuntimeException. It is strongly recommended to make try/catch block.
     String[] getApplicationData(String socialName);
 }

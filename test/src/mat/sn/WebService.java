@@ -37,15 +37,21 @@ public class WebService {
         return "google_signin";
     }
 
+    @RequestMapping({"/home"})
+    public String home(Model model) {
+        return "google_signin";
+    }
+
     @RequestMapping({"/login"})
     public String login(HttpServletRequest request, Model model) throws IOException {
         //Receive google authorization code from jsp and send it to the service
         String code = request.getParameter("code");
         if (code!=null) {
             try {
-                google.authorize(username, IConnector.GOOGLE, code);
-            } catch (Exception e) {
-                e.getMessage();
+                google.authorize(username, "Googl", code);
+            } catch (RuntimeException e) {
+                model.addAttribute("error", e.getMessage());
+                return "error_form";
             }
         }
         return "google_signin";
@@ -55,12 +61,12 @@ public class WebService {
     public String getContacts(Model model) {
         String[] socialNames = new String[1];
         socialNames[0] = IConnector.GOOGLE;
-        String[] contacts = new String[0];
+        String[] contacts;
         try {
             contacts = google.getContacts(username, socialNames);
-        } catch (Exception e) {
-            model.addAttribute("contacts", e.getMessage());
-            return "contacts_form";
+        } catch (SecurityException e) {
+            model.addAttribute("error", e.getMessage());
+            return "error_form";
         }
         StringBuilder buffer = new StringBuilder();
         for (String contact : contacts) {

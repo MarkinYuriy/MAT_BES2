@@ -11,7 +11,6 @@ import com.google.gdata.client.contacts.ContactsService;
 import com.google.gdata.data.contacts.ContactEntry;
 import com.google.gdata.data.contacts.ContactFeed;
 import com.google.gdata.data.extensions.Email;
-import com.google.gdata.util.ServiceException;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -23,6 +22,8 @@ import java.util.LinkedList;
 public class Google extends SocialNetwork {
 
     private static final String APPLICATION_NAME = "MyAvailableTime";
+
+    private static final String MAT_NAME = "My Available Time";
 
     //Default HTTP transport to use to make HTTP requests.
     private static final HttpTransport TRANSPORT = new NetHttpTransport();
@@ -69,7 +70,6 @@ public class Google extends SocialNetwork {
         Method allows to get all email-contacts from user's google account
         */
         LinkedList<String> contacts = new LinkedList<String>();
-
         try {
             gmailService.setHeader("Authorization", "Bearer " + accessToken);
             gmailService.setUserToken(accessToken);//setting credentials according to token received
@@ -82,12 +82,10 @@ public class Google extends SocialNetwork {
                     contacts.add(email.getAddress());
                 }
             }
-        } catch (ServiceException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            return contacts;
+        } catch (Exception e) {
+            throw new SecurityException(AUTH_ERROR);
         }
-        return contacts;
     }
 
     @Override
@@ -101,9 +99,8 @@ public class Google extends SocialNetwork {
             String refreshToken = tokenResponse.getRefreshToken();
             return new TokenData(accessToken, refreshToken);
         } catch (IOException e1) {
-            e1.printStackTrace();
+            throw new SecurityException(AUTH_ERROR);
         }
-        return null;
     }
 
     @Override
@@ -132,9 +129,8 @@ public class Google extends SocialNetwork {
             token.setAccessToken(tokenResponse.getAccessToken());
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new SecurityException(NO_AUTH);
         }
-        return false;
     }
 }
 
