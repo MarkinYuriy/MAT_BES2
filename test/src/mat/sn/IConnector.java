@@ -15,10 +15,10 @@ public interface IConnector {
     public static final int INDEX_SCOPES = 1;
     /* ********************************************** */
 
-    String[] getContacts(String username, String[] socialNames) throws Exception;
+    String[] getContacts(String username, String[] socialNames);
     boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName);
 
     String[] getAuthorizedSocialNames(String username);
-    boolean authorize(String username, String socialName, String authCode) throws Exception;
-    String[] getApplicationData(String socialName) throws Exception;
+    boolean authorize(String username, String socialName, String authCode);
+    String[] getApplicationData(String socialName);
 }

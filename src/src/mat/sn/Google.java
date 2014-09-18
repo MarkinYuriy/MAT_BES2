@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-public class Google extends SocialNetworks {
+public class Google extends SocialNetwork {
 
     private static final String APPLICATION_NAME = "MyAvailableTime";
 
@@ -49,6 +49,7 @@ public class Google extends SocialNetworks {
         scopes.add("https://www.googleapis.com/auth/plus.login");//scope for google authorization
         scopes.add("https://www.google.com/m8/feeds");//scope for working with gmail (read/write)
         scopes.add("https://www.googleapis.com/auth/calendar");//scope for working with calendars (read/write)
+        scopes.add("https://www.googleapis.com/auth/gmail.compose");//scope for working with gmail
     }
 
     protected static final String CLIENT_ID = clientSecrets.getWeb().getClientId();
@@ -58,11 +59,11 @@ public class Google extends SocialNetworks {
     private static final ContactsService gmailService = new ContactsService(APPLICATION_NAME);
 
     //current feed's URL request
-    private static final String gmailRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
+    private static final String contactsRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
 //****************************************************************************************************************
 
     @Override
-    protected LinkedList<String> getContacts(TokenData token) throws Exception {
+    protected LinkedList<String> getContacts(String accessToken) {
         /*
         Created by Oleg Braginsky 09/09/14
         Method allows to get all email-contacts from user's google account
@@ -70,12 +71,9 @@ public class Google extends SocialNetworks {
         LinkedList<String> contacts = new LinkedList<String>();
 
         try {
-            if (token.isExpired()) {
-                refreshToken(token);
-            }
-            gmailService.setHeader("Authorization", "Bearer " + token.getAccessToken());
-            gmailService.setUserToken(token.getAccessToken());//setting credentials according to token received
-            URL feedUrl = new URL(gmailRequestURL);//forming full URL request for current user
+            gmailService.setHeader("Authorization", "Bearer " + accessToken);
+            gmailService.setUserToken(accessToken);//setting credentials according to token received
+            URL feedUrl = new URL(contactsRequestURL);//forming full URL request for current user
             ContactFeed feeds = gmailService.getFeed(feedUrl, ContactFeed.class);//getting contacts full info
             //getting emails from contacts info
             for (int i = 0; i < feeds.getEntries().size(); i++) {
@@ -93,7 +91,7 @@ public class Google extends SocialNetworks {
     }
 
     @Override
-    protected TokenData retrieveToken(String authCode) throws Exception {
+    protected TokenData retrieveToken(String authCode) {
         //Upgrade the authorization code into an access and refresh token.
         try {
         GoogleTokenResponse tokenResponse =
@@ -103,9 +101,9 @@ public class Google extends SocialNetworks {
             String refreshToken = tokenResponse.getRefreshToken();
             return new TokenData(accessToken, refreshToken);
         } catch (IOException e1) {
-            throw new Exception("Authentication required.");
+            e1.printStackTrace();
         }
-//        return null;
+        return null;
     }
 
     @Override
@@ -121,12 +119,12 @@ public class Google extends SocialNetworks {
     }
 
     @Override
-    public boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName) {
+    public boolean shareByMail(String urlMatt, String[] contacts, String accessToken) {
         return false;
     }
 
     //Get new access token using refresh token
-    private boolean refreshToken(TokenData token) throws Exception {
+    protected boolean refreshToken(TokenData token) {
         try {
             GoogleTokenResponse tokenResponse =
                     new GoogleRefreshTokenRequest(TRANSPORT, JSON_FACTORY, token.getRefreshToken(),
@@ -134,8 +132,9 @@ public class Google extends SocialNetworks {
             token.setAccessToken(tokenResponse.getAccessToken());
             return true;
         } catch (IOException e) {
-            throw new Exception("Authentication required.");
+            e.printStackTrace();
         }
+        return false;
     }
 }
 
