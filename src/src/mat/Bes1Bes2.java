@@ -27,21 +27,21 @@ public class Bes1Bes2 implements IBackConnector {
 	public List<Boolean> getSlots(String username, String[] snName, MattData interval) throws IOException {
 		int dayInterval = (interval.getEndHour() - interval.getStartHour())
 				* (60 / interval.getTimeSlot());
+		long millisInSlot = interval.getTimeSlot()*60000;
 		ArrayList<Boolean> slots = new ArrayList<Boolean>();
 		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
+		
 		CalendarList calendarList = null;
 		String idCalendar = null;
-		DateTime startResponse = null;
-		DateTime endResponse = null;
 		Events events = null;
-		long millisInSlot = interval.getTimeSlot()*60*1000;
 		
 		long startDate = getStartPoint(interval);
-		startResponse = new DateTime(startDate);
 		long endDate = getEndPoint(interval);
-		endResponse = new DateTime(endDate);
 		long startSlot = startDate / millisInSlot;
 		long endSlot = endDate / millisInSlot;
+		DateTime startDateTime = new DateTime(startDate);
+		DateTime endDateTime = new DateTime(endDate);
+		
 		System.out.println(startSlot + " " + endSlot);
 		long resultSize = endSlot - startSlot;
 		for (long i = 0; i < resultSize; i++)
@@ -57,8 +57,7 @@ public class Bes1Bes2 implements IBackConnector {
 				idCalendar = calendarListEntry.getId();
 				try {
 					events = TestMatCalendar.client.events().list(idCalendar)
-							.setTimeMin(startResponse).setTimeMax(endResponse)
-							.execute();
+							.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
