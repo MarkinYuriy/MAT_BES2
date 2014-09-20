@@ -1,26 +1,12 @@
 package mat;
 
-import java.io.BufferedReader;
-
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.TimeZone;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleOAuthConstants;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.CalendarList;
@@ -29,307 +15,210 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
 
-public class Bes1Bes2 implements IBes1Bes2 {
-	private static com.google.api.services.calendar.Calendar client;
-
-	private static final List<String> SCOPE = Arrays
-			.asList("https://www.googleapis.com/auth/calendar");
-	private static final String APP_NAME = "Calendar API Quickstart";
-	private static final String USER = "vasya.beersheva@gmail.com";
-	private static final String CLIENT_SECRET_PATH = "D:/TEL-RAN/Workspace_java/MattProject/src/client_secret.json";
-	private static GoogleClientSecrets clientSecrets;
+public class Bes1Bes2 implements IBackConnector {
+	
 	private static Calendar ourCalendar;
-	private static GoogleCredential credential;
-
-	public static List<Boolean> getSlots1(String username, String[] snName, MattData interval) throws IOException {
-		int dayInterval=(interval.getEndHour()-interval.getStartHour())*(60/interval.getTimeSlot());
-		ArrayList<Boolean> currentSlots = new ArrayList<Boolean>();
+	private final static long millisInHour = 3600000;
+	
+	private long minPoint = Long.MAX_VALUE;
+	private long maxPoint = 0;
+		
+	@Override
+	public List<Boolean> getSlots(String username, String[] snName, MattData interval) throws IOException {
+		int dayInterval = (interval.getEndHour() - interval.getStartHour())
+				* (60 / interval.getTimeSlot());
+		ArrayList<Boolean> slots = new ArrayList<Boolean>();
 		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		String pageToken = null;
-		CalendarList calendarList  = null;
-		com.google.api.services.calendar.Calendar service = null;
+		CalendarList calendarList = null;
 		String idCalendar = null;
 		DateTime startResponse = null;
 		DateTime endResponse = null;
 		Events events = null;
-		System.out.println(interval.getStartDate());
-		long startDate2 = interval.getStartDate().getTime() + interval.getStartHour() * 60 * 60 * 1000;
-		startResponse = new DateTime(startDate2);
-		System.out.println(startDate2);
-		System.out.println(startResponse);
+		long millisInSlot = interval.getTimeSlot()*60*1000;
 		
-		long endDate2 = interval.getStartDate().getTime() + (interval.getnDays() - 1) * 24 + (interval.getEndHour()) * 60 * 60 * 1000;
-		endResponse = new DateTime(endDate2);
-		System.out.println(endDate2);
-		System.out.println(endResponse);
-
-		long startSlot = startDate2 / ((interval.getTimeSlot() * 60 * 1000));
-		long endSlot = endDate2 / ((interval.getTimeSlot() * 60 * 1000));
-		System.out.println(startSlot+" "+endSlot);
-		long resultSize= endSlot-startSlot;
+		long startDate = getStartPoint(interval);
+		startResponse = new DateTime(startDate);
+		long endDate = getEndPoint(interval);
+		endResponse = new DateTime(endDate);
+		long startSlot = startDate / millisInSlot;
+		long endSlot = endDate / millisInSlot;
+		System.out.println(startSlot + " " + endSlot);
+		long resultSize = endSlot - startSlot;
 		for (long i = 0; i < resultSize; i++)
-			currentSlots.add(false);
+			slots.add(false);
+
+		calendarList = TestMatCalendar.client.calendarList().list().execute();
+
 		
-		long currentSlot=startSlot;
-		do {
-		  try {
-			calendarList = client.calendarList().list().execute();
-					
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-			List<CalendarListEntry> items = calendarList.getItems();
-			Boolean flagFull=false;
-			while (currentSlot <= endSlot) {
-				for (CalendarListEntry calendarListEntry : items) {
-					if(flagFull)break;
-					idCalendar = calendarListEntry.getId();
-					events = client.events().list(idCalendar).setTimeMin(startResponse).setTimeMax(endResponse).execute();
-					List<Event> listEvents = events.getItems();
-					
-					for (Event event : listEvents) {
-						
-						 System.out.println(event.getSummary());
-				         System.out.println(event.getId());
-				         System.out.println(event.getStart().getDateTime());
-				         System.out.println(event.getEnd().getDateTime());
+		List<CalendarListEntry> items = calendarList.getItems();
 
-						if(flagFull) break;
-						long startEvent = (event.getStart().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
-						long endEvent = (event.getEnd().getDateTime()).getValue() / ((interval.getTimeSlot() * 60 * 1000));
-						
-						while (currentSlot >= startEvent && currentSlot < endEvent && currentSlot < endSlot) {
-							currentSlots.set((int)(currentSlot-startSlot), true);
-							currentSlot++;
-							if(currentSlot>endSlot) flagFull=true;
-						}
-					}
-				}
-				currentSlot++;
-			}
-			for(int index=0; index<resultSize; ){
-					resultSlots.addAll(currentSlots.subList(index, index+dayInterval));
-					index=index+24*(60/interval.timeSlot);
-			}
-		  pageToken = events.getNextPageToken();
-		  	
-		
-		  } while (pageToken != null);
-		
-			
-		return resultSlots;
-		}
-
-	public static void main(String[] args) throws Exception {
-		HttpTransport httpTransport = new NetHttpTransport();
-		JsonFactory jsonFactory = new JacksonFactory();
-		clientSecrets = GoogleClientSecrets.load(jsonFactory, new FileReader(
-				CLIENT_SECRET_PATH));
-
-		// Allow user to authorize via url.
-		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-				httpTransport, jsonFactory, clientSecrets, SCOPE)
-				.setAccessType("online").setApprovalPrompt("auto").build();
-		String url = flow.newAuthorizationUrl()
-				.setRedirectUri(GoogleOAuthConstants.OOB_REDIRECT_URI).build();
-		System.out
-				.println("Please open the following URL in your browser then type"
-						+ " the authorization code:\n" + url);
-
-		// Read code entered by user.
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String code = br.readLine();
-
-		// Generate Credential using retrieved code.
-		GoogleTokenResponse response = flow.newTokenRequest(code)
-				.setRedirectUri(GoogleOAuthConstants.OOB_REDIRECT_URI)
-				.execute();
-		 credential = new GoogleCredential()
-				.setFromTokenResponse(response);
-		// creating Matts
-		 
-		 GregorianCalendar cld = new GregorianCalendar(2014, 8, 18, 0, 0);
-		 System.out.println(cld);
-		 Date d=new Date(cld.getTimeInMillis());
-		 MattData mData = new MattData("mat1", 1, d, 8, 17, 30,
-				"password");
-		 System.out.println(d+" "+"from" +" "+8+" "+"till"+" "+17);
-		 
-	/*	ArrayList<Boolean> slots = new ArrayList<Boolean>();
-
-		Matt mat1 = new Matt();
-		mat1.data = mData;
-		mat1.slots = slots;
-		for (int i = 0; i < 94; i++) {
-			slots.add((int) (Math.random() * 2) == 0 ? false : true);
-		}
-
-		List<Matt> matts = new ArrayList<Matt>();
-		matts.add(mat1);*/
-
-		client = new com.google.api.services.calendar.Calendar.Builder(
-				httpTransport, jsonFactory, credential).setApplicationName(
-				APP_NAME).build();
-		
-		/*ourCalendar = client.calendars()
-				.insert(new Calendar().setSummary("Mat99")).execute();
-		setMatCalendar1(null, null, matts);*/
-		
-		List<Boolean> Slots = getSlots1(null,null,mData);
-		System.out.println(Slots.toString());
-
-	}
-
-	@Override
-	public void setMatCalendar(String username, String[] snNames,
-			List<Matt> matts) {
-	}
-
-	public static void setMatCalendar1(String username, String[] snNames,
-			List<Matt> matts) {
-		long minPoint = Long.MAX_VALUE;
-		long maxPoint = 0;
-		long start = 0;
-		long end = 0;
-		int slotsInHour = 2;
-		int size = matts.size();
-		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
-		for (int i = 0; i < size; i++) {
-			Matt matt = matts.get(i);
-
-			minPoint = ((start = getStartPoint(matt)) < minPoint) ? start
-					: minPoint;
-			maxPoint = ((end = getEndPoint(matt)) > maxPoint) ? end : maxPoint;
-
-			// System.out.println(start+" "+end);
-			long startSlot = start / ((matt.data.getTimeSlot()) * 60 * 1000);
-			long endSlot = end / ((matt.data.getTimeSlot()) * 60 * 1000);
-			int slotSize = (int) (endSlot - startSlot);
-
-			ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
-
-			int intervals = (matt.data.endHour - matt.data.startHour)
-					* slotsInHour;
-			if (intervals != 0) {
-				for (int slot = 0, srcSlot = 0; slot < slotSize; slot++) {
-					if (slot % (24 * (60/matt.data.getTimeSlot())) > intervals) {
-						mattInfoSlots.add(false);
-					} else {
-						for (int j = 0; j < (matt.data.timeSlot == 1 ? 1
-								: slotsInHour); j++)// it will be better to change
-													// matt.data.timeSlot from 0/1 to
-													// number of matt.data.slotsInHour
-							mattInfoSlots.add(matt.slots.get(srcSlot));
-						srcSlot++;
-					}
-				}
-			} else {
-				if (matt.data.timeSlot == 1)// it will be better to change
-											// matt.data.timeSlot from 0/1 to
-											// number of matt.data.slotsInHour
-					mattInfoSlots = matt.slots;
-				else {
-					for (int slot = 0; slot < matt.slots.size(); slot++) {
-						for (int j = 0; j < slotsInHour; j++)
-							mattInfoSlots.add(matt.slots.get(slot));
-					}
-				}
-			}
-			// a need to add proper slots data
-			listMattInfo.add(new MattInfo(startSlot, endSlot, mattInfoSlots,
-					slotsInHour));
-		}
-		//System.out.println(maxPoint + " " + minPoint);
-		long resultSize = (maxPoint - minPoint)
-				/ ((60 / slotsInHour) * 60 * 1000);
-		//System.out.println(resultSize);
-		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		for (long i = 0; i < resultSize; i++)
-			resultSlots.add(false);
-		MattInfo result = new MattInfo(
-				(minPoint / ((60 / slotsInHour) * 60 * 1000)),
-				(maxPoint / ((60 / slotsInHour) * 60 * 1000)),
-				resultSlots, slotsInHour);
-
-		for (int i = 0; i < resultSize; i++) {
-			for (int j = 0; j < size; j++) {
-				if ((result.startPoint + i) >= listMattInfo.get(j).startPoint
-						&& (result.startPoint + i) <= listMattInfo.get(j).endPoint) {
-					if ((listMattInfo.get(j)).slots.get(i)) {
-						resultSlots.set(i, false);
-						break;
-					} else {
-						resultSlots.set(i, true);
-					}
-				}
-			}
-		}
-		long startPoint = result.endPoint;
-		for (Boolean slot : result.slots) {
-			if (slot) {
+		for (CalendarListEntry calendarListEntry : items) {
+			if (!calendarListEntry.getSummary().equals(TestMatCalendar.MAT_NAME)) {
+				idCalendar = calendarListEntry.getId();
 				try {
-					addEvent(ourCalendar, startPoint);
+					events = TestMatCalendar.client.events().list(idCalendar)
+							.setTimeMin(startResponse).setTimeMax(endResponse)
+							.execute();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				List<Event> listEvents = events.getItems();
+				for (Event event : listEvents) {
+
+					System.out.println(event.getSummary());
+					System.out.println(event.getId());
+					System.out.println(event.getStart().getDateTime());
+					System.out.println(event.getEnd().getDateTime());
+
+					long startEvent = (event.getStart().getDateTime())
+							.getValue() / millisInSlot;
+					long endEvent = (event.getEnd().getDateTime()).getValue()
+							/ millisInSlot;
+
+					if (startEvent < startSlot)	startEvent = startSlot;
+					if (endEvent > endSlot) endEvent = endSlot;
+					for (; startEvent < endEvent; startEvent++) {
+						slots.set((int) (startEvent - startSlot), true);
+					}
+				}
 			}
-			startPoint++;
 		}
-
+		for (int index = 0; index < resultSize;) {
+			resultSlots.addAll(slots.subList(index, index + dayInterval));
+			index = index + 24 * (60 / interval.timeSlot);
+		}
+		return resultSlots;
 	}
 
-	private static long getStartPoint(Matt matt) {
-		return matt.data.startDate.getTime() + matt.data.startHour * 60 * 60
-				* 1000;
+
+
+	@Override
+	public void setMatCalendar(String username, String[] snNames, List<Matt> matts) {
+		
+		int slotsInHour = 2;
+		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
+
+		for (Matt matt: matts) {
+			MattInfo mattInfo = getMattInfo(matt, slotsInHour);
+			listMattInfo.add(mattInfo);
+		}		
+		MattInfo result = getResultMattInfo(listMattInfo, slotsInHour);
+		createEventsFromMattInfo(result, slotsInHour);
 	}
 
-	private static long getEndPoint(Matt matt) {
-		// return matt.data.startDate.getTime() + (matt.data.nDays * 24 +
-		// matt.data.endHour) * 60 * 60 * 1000;
-		return matt.data.startDate.getTime()
-				+ ((matt.data.nDays - 1) * 24 + matt.data.endHour) * 60 * 60
-				* 1000;
+	private static long getStartPoint(MattData data) {
+		return data.startDate.getTime() + data.startHour*millisInHour;
 	}
 
-	private static Calendar updateCalendar(Calendar calendar)
+	private static long getEndPoint(MattData data) {
+		return data.startDate.getTime()
+				+ ((data.nDays - 1) * 24 + data.endHour)*millisInHour;
+	}
+
+	private void addEvent(Calendar calendar, long startPoint, int slotsInHour)
 			throws IOException {
-		// View.header("Update Calendar");
-		Calendar entry = new Calendar();
-		entry.setSummary("Updated Calendar for Testing");
-		Calendar result = client.calendars().patch(calendar.getId(), entry)
-				.execute();
-		// View.display(result);
-		return result;
-	}
 
-	private static void addEvent(Calendar calendar, long startPoint)
-			throws IOException {
-
-		Event event = newEvent(startPoint);
-		Event result = client.events().insert(calendar.getId(), event)
-				.execute();
-		// View.display(result);
-	}
-
-	private static Event newEvent(long startPoint) {
 		Event event = new Event();
-		event.setSummary("Reserved time");
-		Date startDate = new Date(startPoint * 1800000);
+		event.setSummary("Available time");
+		Date startDate = new Date(startPoint*millisInHour/slotsInHour);
 		System.out.println(startDate.toString());
-		Date endDate = new Date(startDate.getTime() + 1800000);
+		Date endDate = new Date(startDate.getTime() + millisInHour/2);
 		DateTime start = new DateTime(startDate, TimeZone.getTimeZone("UTC"));
 		event.setStart(new EventDateTime().setDateTime(start));
 		DateTime end = new DateTime(endDate, TimeZone.getTimeZone("UTC"));
 		event.setEnd(new EventDateTime().setDateTime(end));
-		return event;
+		TestMatCalendar.client.events().insert(calendar.getId(), event)
+				.execute();
+	}
+	
+	private MattInfo getMattInfo(Matt matt, int slotsInHour){
+		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
+		int srcSlotInHour = 60/matt.data.timeSlot;
+		int slotsInDay = 24 * slotsInHour;
+		long start = 0;
+		long end = 0;
+		minPoint = ((start = getStartPoint(matt.data)) < minPoint) ? start:minPoint;
+		maxPoint = ((end = getEndPoint(matt.data)) > maxPoint) ? end:maxPoint;
+		long startSlot = start / millisInHour * slotsInHour;
+		long endSlot = end / millisInHour * slotsInHour;
+		int slotSize = (int) (endSlot - startSlot);
+		int intervals = (matt.data.endHour - matt.data.startHour +1) * slotsInHour;
+
+		int dstSlot = 0;
+		int srcSlot = 0;
+		int ratio;
+		
+		if (intervals==slotsInDay && slotsInHour==srcSlotInHour) {
+			mattInfoSlots = matt.slots;
+		}
+		else if (intervals < slotsInDay) {
+			while (dstSlot < slotSize) {
+				if (dstSlot % slotsInDay > intervals) {
+					mattInfoSlots.set(dstSlot++, false);
+				} else {
+					if(slotsInHour==srcSlotInHour){
+						mattInfoSlots.set(dstSlot++, matt.slots.get(srcSlot++));
+					}
+					else if(slotsInHour>srcSlotInHour){
+						ratio = slotsInHour/srcSlotInHour;
+						for(int j=0; j<ratio; j++)
+							mattInfoSlots.set(dstSlot++, matt.slots.get(srcSlot));
+						srcSlot++;
+					}
+					else if(slotsInHour<srcSlotInHour){
+						ratio = srcSlotInHour/slotsInHour;
+						Boolean value = false;
+						for(int j=slotsInHour; j<ratio; j++)
+							value = value || matt.slots.get(srcSlot++);
+						mattInfoSlots.set(dstSlot++, value);
+					}
+				}
+			}
+		} 
+		return new MattInfo(startSlot, endSlot, mattInfoSlots, slotsInHour);
 	}
 
-	@Override
-	public List<Boolean> getSlots(String username, String[] snNames,
-			MattData interval){
-		// TODO Auto-generated method stub
-		return null;
+	private MattInfo getResultMattInfo(List<MattInfo> listMattInfo, int slotsInHour){
+		long startSlot = minPoint / millisInHour * slotsInHour;
+		long endSlot = maxPoint / millisInHour * slotsInHour;
+		int slotSize = (int) (endSlot - startSlot);
+		
+		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
+		for (long i = 0; i < slotSize; i++)
+			resultSlots.add(false);
+
+		long currentSlot = startSlot;
+		ListIterator<Boolean> litr = resultSlots.listIterator();
+		while(litr.hasNext()) {
+			litr.next();
+			for (MattInfo mattInfo: listMattInfo) {
+				if (currentSlot >= mattInfo.startSlot && currentSlot <= mattInfo.endSlot) {
+					if (mattInfo.slots.get((int) (currentSlot - mattInfo.startSlot))) {
+						litr.set(false);
+						break;
+					} else {
+						litr.set(true);
+					}
+				}
+			}
+			currentSlot++;
+		}
+		
+		return new MattInfo(startSlot, endSlot, resultSlots, slotsInHour);
+	}
+	
+	private void createEventsFromMattInfo(MattInfo mattInfo, int slotsInHour){
+		long currentSlot = mattInfo.startSlot;
+		for (Boolean slot : mattInfo.slots) {
+			if (slot) {
+				try {
+					addEvent(ourCalendar, currentSlot, slotsInHour);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			currentSlot++;
+		}
+
 	}
 }
