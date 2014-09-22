@@ -79,7 +79,7 @@ public class Google extends SocialNetwork {
             for (int i = 0; i < feeds.getEntries().size(); i++) {
                 ContactEntry contact = feeds.getEntries().get(i);
                 for (Email email : contact.getEmailAddresses()) {
-                    contacts.add(email.getAddress());
+                    contacts.add(email.getAddress());  
                 }
             }
             return contacts;

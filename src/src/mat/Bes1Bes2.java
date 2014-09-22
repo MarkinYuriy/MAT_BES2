@@ -17,7 +17,6 @@ import com.google.api.services.calendar.model.Events;
 
 public class Bes1Bes2 implements IBackConnector {
 	
-	private static Calendar ourCalendar;
 	private final static long millisInHour = 3600000;
 	
 	private long minPoint = Long.MAX_VALUE;
@@ -25,7 +24,7 @@ public class Bes1Bes2 implements IBackConnector {
 		
 	@Override
 	public List<Boolean> getSlots(String username, String[] snName, MattData interval) throws IOException {
-		int dayInterval = (interval.getEndHour() - interval.getStartHour())
+		int dayInterval = (interval.getEndHour() + 1 - interval.getStartHour())
 				* (60 / interval.getTimeSlot());
 		long millisInSlot = interval.getTimeSlot()*60000;
 		ArrayList<Boolean> slots = new ArrayList<Boolean>();
@@ -37,19 +36,20 @@ public class Bes1Bes2 implements IBackConnector {
 		
 		long startDate = getStartPoint(interval);
 		long endDate = getEndPoint(interval);
+	
 		long startSlot = startDate / millisInSlot;
 		long endSlot = endDate / millisInSlot;
 		DateTime startDateTime = new DateTime(startDate);
 		DateTime endDateTime = new DateTime(endDate);
-		
+		System.out.println(startDateTime +" "+endDateTime);
 		System.out.println(startSlot + " " + endSlot);
 		long resultSize = endSlot - startSlot;
 		for (long i = 0; i < resultSize; i++)
 			slots.add(false);
+		System.out.println(slots.toString());
 
 		calendarList = TestMatCalendar.client.calendarList().list().execute();
 
-		
 		List<CalendarListEntry> items = calendarList.getItems();
 
 		for (CalendarListEntry calendarListEntry : items) {
@@ -82,6 +82,7 @@ public class Bes1Bes2 implements IBackConnector {
 				}
 			}
 		}
+		
 		for (int index = 0; index < resultSize;) {
 			resultSlots.addAll(slots.subList(index, index + dayInterval));
 			index = index + 24 * (60 / interval.timeSlot);
@@ -102,7 +103,12 @@ public class Bes1Bes2 implements IBackConnector {
 			listMattInfo.add(mattInfo);
 		}		
 		MattInfo result = getResultMattInfo(listMattInfo, slotsInHour);
-		createEventsFromMattInfo(result, slotsInHour);
+		try {
+			createEventsFromMattInfo(result, slotsInHour);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private static long getStartPoint(MattData data) {
@@ -111,7 +117,7 @@ public class Bes1Bes2 implements IBackConnector {
 
 	private static long getEndPoint(MattData data) {
 		return data.startDate.getTime()
-				+ ((data.nDays - 1) * 24 + data.endHour)*millisInHour;
+				+ ((data.nDays - 1) * 24 + data.endHour + 1)*millisInHour;
 	}
 
 	private void addEvent(Calendar calendar, long startPoint, int slotsInHour)
@@ -131,7 +137,7 @@ public class Bes1Bes2 implements IBackConnector {
 	}
 	
 	private MattInfo getMattInfo(Matt matt, int slotsInHour){
-		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
+		
 		int srcSlotInHour = 60/matt.data.timeSlot;
 		int slotsInDay = 24 * slotsInHour;
 		long start = 0;
@@ -140,7 +146,12 @@ public class Bes1Bes2 implements IBackConnector {
 		maxPoint = ((end = getEndPoint(matt.data)) > maxPoint) ? end:maxPoint;
 		long startSlot = start / millisInHour * slotsInHour;
 		long endSlot = end / millisInHour * slotsInHour;
+		
 		int slotSize = (int) (endSlot - startSlot);
+		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
+		for(int i=0; i<slotSize; i++)
+			mattInfoSlots.add(false);
+		
 		int intervals = (matt.data.endHour - matt.data.startHour +1) * slotsInHour;
 
 		int dstSlot = 0;
@@ -152,9 +163,7 @@ public class Bes1Bes2 implements IBackConnector {
 		}
 		else if (intervals < slotsInDay) {
 			while (dstSlot < slotSize) {
-				if (dstSlot % slotsInDay > intervals) {
-					mattInfoSlots.set(dstSlot++, false);
-				} else {
+				if (dstSlot % slotsInDay < intervals) {
 					if(slotsInHour==srcSlotInHour){
 						mattInfoSlots.set(dstSlot++, matt.slots.get(srcSlot++));
 					}
@@ -206,7 +215,20 @@ public class Bes1Bes2 implements IBackConnector {
 		return new MattInfo(startSlot, endSlot, resultSlots, slotsInHour);
 	}
 	
-	private void createEventsFromMattInfo(MattInfo mattInfo, int slotsInHour){
+	private void createEventsFromMattInfo(MattInfo mattInfo, int slotsInHour) throws IOException{
+		CalendarList calendarList = TestMatCalendar.client.calendarList().list().execute();
+
+		List<CalendarListEntry> items = calendarList.getItems();
+
+		for (CalendarListEntry calendarListEntry : items) {
+			if (calendarListEntry.getSummary().equals(TestMatCalendar.MAT_NAME)) {
+				TestMatCalendar.client.calendars().delete(calendarListEntry.getId()).execute();
+				System.out.println(calendarListEntry.getId());
+				
+			}
+		}
+		Calendar ourCalendar=TestMatCalendar.client.calendars()
+				.insert(new Calendar().setSummary(TestMatCalendar.MAT_NAME)).execute();
 		long currentSlot = mattInfo.startSlot;
 		for (Boolean slot : mattInfo.slots) {
 			if (slot) {
