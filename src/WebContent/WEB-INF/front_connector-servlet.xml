@@ -1,0 +1,23 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:context="http://www.springframework.org/schema/context"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:tx="http://www.springframework.org/schema/tx"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+  http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd ">
+  
+<!-- components of the application service getting result of any query -->
+<bean id="connector" class="mat.sn.SocialNetworksConnector" /> <!-- class for application model -->
+
+<!-- Burlap Service Exporter -->
+<bean id="burlapFrontConnectorService" class="org.springframework.remoting.caucho.BurlapServiceExporter">
+<property  name="service" ref="connector"></property> 
+<property name="serviceInterface" value="mat.sn.IFrontConnector"></property> 
+</bean>
+
+<!-- mapping to the application service -->
+<bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+<property name="mappings" value="/front_connector.service1=burlapFrontConnectorService"/>
+</bean>
+
+</beans>
