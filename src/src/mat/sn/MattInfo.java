@@ -1,4 +1,4 @@
-package mat;
+package mat.sn;
 
 import java.util.ArrayList;
 

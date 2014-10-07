@@ -1,6 +1,6 @@
 package mat.sn;
 
-public interface IConnector {
+public interface IFrontConnector {
     /* *********************************************** */
     //PROTOCOL CONSTANTS
     //social networks names

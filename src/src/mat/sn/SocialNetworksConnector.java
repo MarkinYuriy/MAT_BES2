@@ -1,11 +1,13 @@
-package mat;
+package mat.sn;
 
- 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
+import mat.MattData;
+import mat.Matt;
 
 public class SocialNetworksConnector implements IFrontConnector, IBackConnector {
     protected static final String UNSUPPORTED_SN = " is unsupported social network.";
@@ -21,7 +23,6 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 
     //Method for class reflection. Returns object of class with name received.
     private SocialNetwork getInstance(String socialNetwork) {
-        Class cl = null;
         try {
             return  (SocialNetwork) Class.forName(PACKAGE + socialNetwork).newInstance();
         } catch (Exception e) {
@@ -55,6 +56,7 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
         userData.put(username, socialNetworks);
         return true;
     }
+//****************************************************************************************************************
 
     @Override
     //Method for getting contacts from some social network
@@ -66,39 +68,46 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
         }
         return contacts.toArray(new String[contacts.size()]);
     }
+//****************************************************************************************************************
 
     @Override
     public boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName) {
-        return getInstance(socialName).shareByMail(urlMatt, contacts, getToken(userName, socialName));
+    	System.out.println("SN urlMatt: "+urlMatt);
+    	System.out.println("SN contacts: "+contacts.toString());
+    	System.out.println("SN username: "+userName);
+    	System.out.println("SN socialName: "+socialName);
+    	return getInstance(socialName).shareByMail(userName, urlMatt, contacts, getToken(userName, socialName));
     }
+//****************************************************************************************************************
 
     @Override
     public String[] getAuthorizedSocialNames(String username) {
+    	if(userData.containsKey(username)){
+    		Set<String> sNames  = userData.get(username).keySet();
+    		String[] arrStr = new String[sNames.size()];
+    		int i=0;
+    		for(String str: sNames)
+    			arrStr[i++]=str;
+    		return arrStr;
+    	}
         return new String[0];
     }
+//****************************************************************************************************************
 
     @Override
     //Method that provides to front-end server information for some social network login process
     public String[] getApplicationData(String socialName) {
         return getInstance(socialName).getApplicationData();
     }
+//****************************************************************************************************************
 
 	@Override
-	public List<Boolean> getSlots(String username, String[] snNames,
-			MattData interval) throws IOException {
+	public List<Boolean> getSlots(String username, String[] snNames, MattData interval) {
 		ArrayList<ArrayList<Boolean>> slotsLists = new ArrayList<ArrayList<Boolean>>(); 
 		for (int i=0; i<snNames.length; i++){
 			slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(interval, getToken(username, snNames[i])));
 		}
 		return aggregateSlotsLists(slotsLists);
-	}
-
-	@Override
-	public void setMatCalendar(String username, String[] snNames,
-			List<Matt> matts) {
-		for (int i=0; i<snNames.length; i++){
-			getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
-		}
 	}
 	
 	private List<Boolean> aggregateSlotsLists(ArrayList<ArrayList<Boolean>> slotsLists) {
@@ -116,5 +125,13 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 			}
 		}
 		return resultSlots;
+	}
+
+//****************************************************************************************************************
+
+	@Override
+	public void setMatCalendar(String username, String[] snNames, List<Matt> matts) {
+		for (int i=0; i<snNames.length; i++)
+			getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
 	}
 }
