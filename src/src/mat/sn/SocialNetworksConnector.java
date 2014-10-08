@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import mat.IBackConnector;
+import mat.IFrontConnector;
 import mat.MattData;
 import mat.Matt;
 
