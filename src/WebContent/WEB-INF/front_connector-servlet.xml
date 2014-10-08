@@ -12,7 +12,7 @@
 <!-- Burlap Service Exporter -->
 <bean id="burlapFrontConnectorService" class="org.springframework.remoting.caucho.BurlapServiceExporter">
 <property  name="service" ref="connector"></property> 
-<property name="serviceInterface" value="mat.sn.IFrontConnector"></property> 
+<property name="serviceInterface" value="mat.IFrontConnector"></property> 
 </bean>
 
 <!-- mapping to the application service -->

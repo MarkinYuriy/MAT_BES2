@@ -12,7 +12,7 @@
 <!-- Burlap Service Exporter -->
 <bean id="burlapBackConnectorService" class="org.springframework.remoting.caucho.BurlapServiceExporter">
 <property  name="service" ref="connector"></property> <!-- reference to the service -->
-<property name="serviceInterface" value="mat.sn.IBackConnector"></property> <!-- interface of the service -->
+<property name="serviceInterface" value="mat.IBackConnector"></property> <!-- interface of the service -->
 </bean>
 
 <!-- mapping to the application service -->
