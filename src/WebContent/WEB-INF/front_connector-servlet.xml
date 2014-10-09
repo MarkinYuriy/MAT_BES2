@@ -6,12 +6,11 @@
   http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd ">
   
-<!-- components of the application service getting result of any query -->
-<bean id="connector" class="mat.sn.SocialNetworksConnector" /> <!-- class for application model -->
-
+<import resource="back_connector-servlet.xml" />
+  
 <!-- Burlap Service Exporter -->
 <bean id="burlapFrontConnectorService" class="org.springframework.remoting.caucho.BurlapServiceExporter">
-<property  name="service" ref="connector"></property> 
+<property name="service" ref="connector"/> 
 <property name="serviceInterface" value="mat.IFrontConnector"></property> 
 </bean>
 
