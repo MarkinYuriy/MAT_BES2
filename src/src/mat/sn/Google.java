@@ -366,7 +366,7 @@ public class Google extends SocialNetwork {
 					} else if (slotsInHour < srcSlotInHour) {
 						ratio = srcSlotInHour / slotsInHour;
 						Boolean value = false;
-						for (int j = slotsInHour; j < ratio; j++)
+						for (int j = 0; j < ratio; j++)
 							value = value || matt.getSlots().get(srcSlot++);
 						mattInfoSlots.set(dstSlot++, value);
 					}
