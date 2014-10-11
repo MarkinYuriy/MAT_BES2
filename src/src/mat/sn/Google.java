@@ -320,20 +320,6 @@ public class Google extends SocialNetwork {
 		}    	
     }
 	
-	private void addEvent(Calendar calendar, long startPoint, int slotsInHour) throws IOException {
-		Event event = new Event();
-		event.setSummary(EVENT_NAME);
-		Date startDate = new Date(startPoint * millisInHour / slotsInHour);
-		System.out.println(startDate.toString());
-		Date endDate = new Date(startDate.getTime() + millisInHour / 2);
-		DateTime start = new DateTime(startDate, TimeZone.getTimeZone("UTC"));
-		event.setStart(new EventDateTime().setDateTime(start));
-		DateTime end = new DateTime(endDate, TimeZone.getTimeZone("UTC"));
-		event.setEnd(new EventDateTime().setDateTime(end));
-		calendarService.events().insert(calendar.getId(), event)
-				.execute();
-	}
-
 	private MattInfo getMattInfo(Matt matt, int slotsInHour) {
 		int srcSlotInHour = 60 / matt.getData().getTimeSlot();
 		int slotsInDay = 24 * slotsInHour;
@@ -479,5 +465,18 @@ public class Google extends SocialNetwork {
 		}
 	}
     
+	private void addEvent(Calendar calendar, long startPoint, int slotsInHour) throws IOException {
+		Event event = new Event();
+		event.setSummary(EVENT_NAME);
+		Date startDate = new Date(startPoint * millisInHour / slotsInHour);
+		System.out.println(startDate.toString());
+		Date endDate = new Date(startDate.getTime() + millisInHour / 2);
+		DateTime start = new DateTime(startDate, TimeZone.getTimeZone("UTC"));
+		event.setStart(new EventDateTime().setDateTime(start));
+		DateTime end = new DateTime(endDate, TimeZone.getTimeZone("UTC"));
+		event.setEnd(new EventDateTime().setDateTime(end));
+		calendarService.events().insert(calendar.getId(), event)
+				.execute();
+	}
 
 }
