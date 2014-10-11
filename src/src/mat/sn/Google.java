@@ -289,12 +289,14 @@ public class Google extends SocialNetwork {
 		}
 		return resultSlots;
 	}
+    
+//****************************************************************************************************************
 
-	private static long getStartPoint(MattData data) {
+	private long getStartPoint(MattData data) {
 		return data.getStartDate().getTime() + data.getStartHour() * millisInHour;
 	}
 
-	private static long getEndPoint(MattData data) {
+	private long getEndPoint(MattData data) {
 		return data.getStartDate().getTime()
 				+ ((data.getnDays() - 1) * 24 + data.getEndHour() + 1) * millisInHour;
 	}
@@ -356,23 +358,16 @@ public class Google extends SocialNetwork {
 	}
 
 	/**
-	 * MattInfo slots arrangement in case of a slotInHour is longer than srcSlotInHour and daily matt interval doesn't last whole day.
+	 MattInfo slots arrangement in case of srcSlotInHour and slotInHour are equal and daily matt interval doesn't last whole day.
 	 */
-	private void arrangeLongMattInfoSlots(Matt matt,
-			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
-			int slotSize, int slotsInHour, int srcSlotInHour) {
+	private void arrangeEqualMattInfoSlots(Matt matt, ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals, int slotSize) {
 		int dstSlot = 0;
 		int srcSlot = 0;
-		int ratio;
 		while (dstSlot < slotSize) {
-			ratio = srcSlotInHour / slotsInHour;
-			if (dstSlot % slotsInDay < intervals) {
-				Boolean value = false;
-				for (int j = 0; j < ratio; j++)
-					value = value || matt.getSlots().get(srcSlot++);
-				mattInfoSlots.set(dstSlot++, value);
+			if (dstSlot % slotsInDay < intervals){
+				mattInfoSlots.set(dstSlot++, matt.getSlots().get(srcSlot++));
 			}else{
-				srcSlot+=ratio;
+				srcSlot++; 
 				dstSlot++;
 			}
 		}
@@ -401,16 +396,23 @@ public class Google extends SocialNetwork {
 	}
 
 	/**
-	 MattInfo slots arrangement in case of srcSlotInHour and slotInHour are equal and daily matt interval doesn't last whole day.
+	 * MattInfo slots arrangement in case of a slotInHour is longer than srcSlotInHour and daily matt interval doesn't last whole day.
 	 */
-	private void arrangeEqualMattInfoSlots(Matt matt, ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals, int slotSize) {
+	private void arrangeLongMattInfoSlots(Matt matt,
+			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
+			int slotSize, int slotsInHour, int srcSlotInHour) {
 		int dstSlot = 0;
 		int srcSlot = 0;
+		int ratio;
 		while (dstSlot < slotSize) {
-			if (dstSlot % slotsInDay < intervals){
-				mattInfoSlots.set(dstSlot++, matt.getSlots().get(srcSlot++));
+			ratio = srcSlotInHour / slotsInHour;
+			if (dstSlot % slotsInDay < intervals) {
+				Boolean value = false;
+				for (int j = 0; j < ratio; j++)
+					value = value || matt.getSlots().get(srcSlot++);
+				mattInfoSlots.set(dstSlot++, value);
 			}else{
-				srcSlot++; 
+				srcSlot+=ratio;
 				dstSlot++;
 			}
 		}
