@@ -228,7 +228,7 @@ public class Google extends SocialNetwork {
 
     @Override
 	List<Boolean> getSlots(MattData interval, String accessToken){
-		int dayInterval = (interval.getEndHour() + 1 - interval.getStartHour())
+		int dayInterval = (interval.getEndHour()/* + 1*/ - interval.getStartHour())
 				* (60 / interval.getTimeSlot());
 		long millisInSlot = interval.getTimeSlot()*60000;
 		ArrayList<Boolean> slots = new ArrayList<Boolean>();
@@ -298,7 +298,7 @@ public class Google extends SocialNetwork {
 
 	private long getEndPoint(MattData data) {
 		return data.getStartDate().getTime()
-				+ ((data.getnDays() - 1) * 24 + data.getEndHour() + 1) * millisInHour;
+				+ ((data.getnDays() - 1) * 24 + data.getEndHour()/* + 1*/) * millisInHour;
 	}
     
 //****************************************************************************************************************
@@ -335,7 +335,7 @@ public class Google extends SocialNetwork {
 		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
 		for (int i = 0; i < slotSize; i++)
 			mattInfoSlots.add(false);
-		int intervals = (matt.getData().getEndHour() - matt.getData().getStartHour() + 1) * slotsInHour;
+		int intervals = (matt.getData().getEndHour() - matt.getData().getStartHour() /*+ 1*/) * slotsInHour;
 		
 		if (intervals == slotsInDay && slotsInHour == srcSlotInHour) {
 			mattInfoSlots = matt.getSlots();
