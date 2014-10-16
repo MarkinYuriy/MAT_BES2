@@ -274,9 +274,15 @@ public class Google extends SocialNetwork {
 					System.out.println(event.getStart().getDateTime());
 					System.out.println(event.getEnd().getDateTime());
 
-					long startEvent = (event.getStart().getDateTime()).getValue() / millisInSlot;
-					long endEvent = (event.getEnd().getDateTime()).getValue() / millisInSlot;
-					if (startEvent < startSlot)	startEvent = startSlot;
+					long startEvent;
+					long endEvent;
+					if (event.getStart().getDate() == null) { //check if a whole-day event calendar
+						startEvent = (event.getStart().getDateTime()).getValue() / millisInSlot;
+						endEvent = (event.getEnd().getDateTime()).getValue() / millisInSlot;
+					} else {
+						startEvent = (event.getStart().getDate()).getValue() / millisInSlot;
+						endEvent = (event.getEnd().getDate()).getValue() / millisInSlot;
+					} 					if (startEvent < startSlot)	startEvent = startSlot;
 					if (endEvent > endSlot) endEvent = endSlot;
 					for (; startEvent < endEvent; startEvent++)
 						slots.set((int) (startEvent - startSlot), true);
