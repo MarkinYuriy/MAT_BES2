@@ -314,6 +314,69 @@ public class Google extends SocialNetwork {
 		GoogleCredential credential = getCredential(accessToken);
 		calendarService = new com.google.api.services.calendar.Calendar.Builder(
 				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
+		Calendar calendar = null;
+		try {
+			CalendarList calendarList = calendarService.calendarList().list().execute();	
+			List<CalendarListEntry> items = calendarList.getItems();
+			for (CalendarListEntry calendarListEntry : items) {
+				if (calendarListEntry.getSummary().equals(MAT_NAME)) {
+					calendarService.calendars().delete(calendarListEntry.getId()).execute();
+					System.out.println(calendarListEntry.getId());
+				}
+			}
+			calendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+//		int slotsInHour = 2;
+		for (Matt matt : matts) {
+			String name = matt.getData().getName();//name of matt
+			int nDays = matt.getData().getnDays();//number of days
+			Date startDate  = matt.getData().getStartDate();
+			int startHour = matt.getData().getStartHour();
+			int endHour = matt.getData().getEndHour();
+			int timeSlot = matt.getData().getTimeSlot(); //in minutes
+			ArrayList<Boolean> slots =matt.getSlots();
+			int slotsByDay = slots.size()/nDays;
+			long currentData = startDate.getTime()+startHour*millisInHour;
+			int currentSlot = 0;
+			for(Boolean slot: slots)
+				if(!slot){
+					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
+					event.setSummary(name);
+					EventDateTime eventDTS = new EventDateTime();
+					eventDTS.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
+					System.out.println("start "+eventDTS);
+					currentData+=timeSlot*millisInHour/60;
+					EventDateTime eventDTE = new EventDateTime();
+					eventDTE.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
+					System.out.println("end "+eventDTE);
+					event.setEnd(eventDTE);
+					event.setStart(eventDTS);
+System.out.println(event);
+					if(slotsByDay==currentSlot++)
+						currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
+					try {
+						calendarService.events().insert(calendar.getId(), event).execute();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					currentData+=timeSlot*millisInHour/60;
+					if(slotsByDay==currentSlot++)
+						currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
+				}
+
+		}
+    }
+
+/*    @Override
+	void setMatCalendar(List<Matt> matts, String accessToken) {
+		GoogleCredential credential = getCredential(accessToken);
+		calendarService = new com.google.api.services.calendar.Calendar.Builder(
+				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
 		int slotsInHour = 2;
 		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
 		for (Matt matt : matts) {
@@ -327,7 +390,7 @@ public class Google extends SocialNetwork {
 			e.printStackTrace();
 		}    	
     }
-	
+	*/
 	private MattInfo getMattInfo(Matt matt, int slotsInHour) {
 		int srcSlotInHour = 60 / matt.getData().getTimeSlot();
 		int slotsInDay = 24 * slotsInHour;
@@ -341,7 +404,7 @@ public class Google extends SocialNetwork {
 		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
 		for (int i = 0; i < slotSize; i++)
 			mattInfoSlots.add(false);
-		int intervals = (matt.getData().getEndHour() - matt.getData().getStartHour() /*+ 1*/) * slotsInHour;
+		int intervals = (matt.getData().getEndHour() - matt.getData().getStartHour() + 1) * slotsInHour;
 		
 		if (intervals == slotsInDay && slotsInHour == srcSlotInHour) {
 			mattInfoSlots = matt.getSlots();
@@ -363,9 +426,9 @@ public class Google extends SocialNetwork {
 		return new MattInfo(startSlot, endSlot, mattInfoSlots, slotsInHour);
 	}
 
-	/**
-	 MattInfo slots arrangement in case of srcSlotInHour and slotInHour are equal and daily matt interval doesn't last whole day.
-	 */
+
+//	 MattInfo slots arrangement in case of srcSlotInHour and slotInHour are equal and daily matt interval doesn't last whole day.
+	
 	private void arrangeEqualMattInfoSlots(Matt matt, ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals, int slotSize) {
 		int dstSlot = 0;
 		int srcSlot = 0;
@@ -379,9 +442,9 @@ public class Google extends SocialNetwork {
 		}
 	}
 
-	/**
-	 	MattInfo slots arrangement in case of a slotInHour is shorter than srcSlotInHour and daily matt interval doesn't last whole day.
-	 */
+	
+//	 	MattInfo slots arrangement in case of a slotInHour is shorter than srcSlotInHour and daily matt interval doesn't last whole day.
+	
 	private void arrangeShortMattInfoSlots(Matt matt,
 			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
 			int slotSize, int slotsInHour, int srcSlotInHour) {
@@ -401,9 +464,9 @@ public class Google extends SocialNetwork {
 		}
 	}
 
-	/**
-	 * MattInfo slots arrangement in case of a slotInHour is longer than srcSlotInHour and daily matt interval doesn't last whole day.
-	 */
+	
+//	 MattInfo slots arrangement in case of a slotInHour is longer than srcSlotInHour and daily matt interval doesn't last whole day.
+	 
 	private void arrangeLongMattInfoSlots(Matt matt,
 			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
 			int slotSize, int slotsInHour, int srcSlotInHour) {
