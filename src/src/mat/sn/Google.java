@@ -340,7 +340,7 @@ public class Google extends SocialNetwork {
 			ArrayList<Boolean> slots =matt.getSlots();
 			int slotsByDay = slots.size()/nDays;
 			long currentData = startDate.getTime()+startHour*millisInHour;
-			int currentSlot = 0;
+			int currentSlot = 1;
 			for(Boolean slot: slots)
 				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
@@ -355,7 +355,7 @@ public class Google extends SocialNetwork {
 					event.setEnd(eventDTE);
 					event.setStart(eventDTS);
 System.out.println(event);
-					if(slotsByDay==currentSlot++)
+					if((currentSlot++)%slotsByDay==0)
 						currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
 					try {
 						calendarService.events().insert(calendar.getId(), event).execute();
