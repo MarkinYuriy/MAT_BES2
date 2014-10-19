@@ -43,6 +43,7 @@ import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
+import com.google.gdata.client.Query;
 import com.google.gdata.client.contacts.ContactsService;
 import com.google.gdata.data.contacts.ContactEntry;
 import com.google.gdata.data.contacts.ContactFeed;
@@ -75,6 +76,7 @@ public class Google extends SocialNetwork {
 
     //creating service that allows working with gmail API
     private static final ContactsService gmailService = new ContactsService(APPLICATION_NAME);
+    private static final int MAX_COUNT_EMAILS = 200; 
 
     private com.google.api.services.calendar.Calendar calendarService;
 	private static final String MAT_NAME = "My Available Time";
@@ -102,7 +104,9 @@ public class Google extends SocialNetwork {
             gmailService.setHeader("Authorization", "Bearer " + accessToken);
             gmailService.setUserToken(accessToken);//setting credentials according to token received
             URL feedUrl = new URL(contactsRequestURL);//forming full URL request for current user
-            ContactFeed feeds = gmailService.getFeed(feedUrl, ContactFeed.class);//getting contacts full info
+            Query query = new Query(feedUrl);
+            query.setMaxResults(MAX_COUNT_EMAILS);            
+            ContactFeed feeds = gmailService.getFeed(query, ContactFeed.class);//getting contacts full info
             //getting emails from contacts info
             for (int i = 0; i < feeds.getEntries().size(); i++) {
                 ContactEntry contact = feeds.getEntries().get(i);
