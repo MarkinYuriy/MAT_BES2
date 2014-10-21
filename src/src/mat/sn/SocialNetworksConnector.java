@@ -47,16 +47,19 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
     public boolean authorize(String username, String socialName, String authCode) {
         if (username == null || socialName == null || authCode == null)
             return false;
-        TokenData token = getInstance(socialName).retrieveToken(authCode);
+        try {
+			TokenData token = getInstance(socialName).retrieveToken(authCode);
+			HashMap<String, TokenData> socialNetworks = userData.get(username);
+			if (socialNetworks == null) {
+			    socialNetworks = new HashMap<String, TokenData>();
+			}
 
-        HashMap<String, TokenData> socialNetworks = userData.get(username);
-        if (socialNetworks == null) {
-            socialNetworks = new HashMap<String, TokenData>();
-        }
-
-        socialNetworks.put(socialName, token);
-        userData.put(username, socialNetworks);
-        return true;
+			socialNetworks.put(socialName, token);
+			userData.put(username, socialNetworks);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
     }
 //****************************************************************************************************************
 
@@ -65,8 +68,10 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
     public String[] getContacts(String username, String[] socialNames) {
         List<String> contacts = new LinkedList<String>();
         for (String socialNetwork : socialNames) {
-            String accessToken = getToken(username, socialNetwork);
-            contacts.addAll(getInstance(socialNetwork).getContacts(accessToken));
+            try {
+				String accessToken = getToken(username, socialNetwork);
+				contacts.addAll(getInstance(socialNetwork).getContacts(accessToken));
+			} catch (Exception e) {	}
         }
         return contacts.toArray(new String[contacts.size()]);
     }
@@ -74,11 +79,11 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 
     @Override
     public boolean shareByMail(String urlMatt, String[] contacts, String userName, String socialName) {
-    	System.out.println("SN urlMatt: "+urlMatt);
-    	System.out.println("SN contacts: "+contacts.toString());
-    	System.out.println("SN username: "+userName);
-    	System.out.println("SN socialName: "+socialName);
-    	return getInstance(socialName).shareByMail(userName, urlMatt, contacts, getToken(userName, socialName));
+    	try{
+    		return getInstance(socialName).shareByMail(userName, urlMatt, contacts, getToken(userName, socialName));
+    	} catch(Exception e){ 
+    		return false;
+    	}
     }
 //****************************************************************************************************************
 
@@ -99,26 +104,34 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
     @Override
     //Method that provides to front-end server information for some social network login process
     public String[] getApplicationData(String socialName) {
-        return getInstance(socialName).getApplicationData();
+    	try{
+    		return getInstance(socialName).getApplicationData();
+    	} catch(Exception e){ 
+    		return null;
+    	}
     }
 //****************************************************************************************************************
 
 	@Override
 	public List<Boolean> getSlots(String username, String[] snNames, MattData interval) {
-		ArrayList<ArrayList<Boolean>> slotsLists = new ArrayList<ArrayList<Boolean>>(); 
+		ArrayList<ArrayList<Boolean>> slotsLists = new ArrayList<ArrayList<Boolean>>();
+		ArrayList<Boolean> falsSlotsList = new ArrayList<Boolean>();
+		long countSlots = (interval.getEndHour()-interval.getStartHour())*60/interval.getTimeSlot()*interval.getnDays();
+		for (long i = 0; i < countSlots; i++)
+			falsSlotsList.add(false);
+		slotsLists.add(falsSlotsList);
 		for (int i=0; i<snNames.length; i++){
-			slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(interval, getToken(username, snNames[i])));
+			try{
+				slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(interval, getToken(username, snNames[i])));
+			} catch(Exception e){ }
 		}
 		return aggregateSlotsLists(slotsLists);
 	}
 	
 	private List<Boolean> aggregateSlotsLists(ArrayList<ArrayList<Boolean>> slotsLists) {
-		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		int slotSize = slotsLists.get(0).size();
-		for (long i = 0; i < slotSize; i++)
-			resultSlots.add(false);
-		
-		for(int i=0; i<slotSize; i++){
+		ArrayList<Boolean> resultSlots = slotsLists.get(0);
+		int countSlots = resultSlots.size();
+		for(int i=0; i<countSlots; i++){
 			for(ArrayList<Boolean> currentList : slotsLists){
 				if(currentList.get(i)){
 					resultSlots.set(i , true);
@@ -133,7 +146,10 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 
 	@Override
 	public void setMatCalendar(String username, String[] snNames, List<Matt> matts) {
-		for (int i=0; i<snNames.length; i++)
-			getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
+		for (int i=0; i<snNames.length; i++){
+			try{		
+				getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
+			} catch(Exception e) { }
+		}
 	}
 }

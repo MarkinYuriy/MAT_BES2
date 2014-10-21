@@ -80,10 +80,7 @@ public class Google extends SocialNetwork {
 
     private com.google.api.services.calendar.Calendar calendarService;
 	private static final String MAT_NAME = "My Available Time";
-	private static final String EVENT_NAME = "Available Time";
 	private final static long millisInHour = 3600000;
-	private long minPoint = Long.MAX_VALUE;
-	private long maxPoint = 0;
 
     //current feed's URL request
     private static final String contactsRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
@@ -232,7 +229,7 @@ public class Google extends SocialNetwork {
 
     @Override
 	List<Boolean> getSlots(MattData interval, String accessToken){
-		int dayInterval = (interval.getEndHour()/* + 1*/ - interval.getStartHour())
+		int dayInterval = (interval.getEndHour() - interval.getStartHour())
 				* (60 / interval.getTimeSlot());
 		long millisInSlot = interval.getTimeSlot()*60000;
 		ArrayList<Boolean> slots = new ArrayList<Boolean>();
@@ -286,7 +283,8 @@ public class Google extends SocialNetwork {
 					} else {
 						startEvent = (event.getStart().getDate()).getValue() / millisInSlot;
 						endEvent = (event.getEnd().getDate()).getValue() / millisInSlot;
-					} 					if (startEvent < startSlot)	startEvent = startSlot;
+					} 					
+					if (startEvent < startSlot)	startEvent = startSlot;
 					if (endEvent > endSlot) endEvent = endSlot;
 					for (; startEvent < endEvent; startEvent++)
 						slots.set((int) (startEvent - startSlot), true);
@@ -330,10 +328,8 @@ public class Google extends SocialNetwork {
 			}
 			calendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-//		int slotsInHour = 2;
 		for (Matt matt : matts) {
 			String name = matt.getData().getName();//name of matt
 			int nDays = matt.getData().getnDays();//number of days
@@ -375,183 +371,4 @@ System.out.println(event);
 
 		}
     }
-
-/*    @Override
-	void setMatCalendar(List<Matt> matts, String accessToken) {
-		GoogleCredential credential = getCredential(accessToken);
-		calendarService = new com.google.api.services.calendar.Calendar.Builder(
-				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
-		int slotsInHour = 2;
-		ArrayList<MattInfo> listMattInfo = new ArrayList<MattInfo>();
-		for (Matt matt : matts) {
-			MattInfo mattInfo = getMattInfo(matt, slotsInHour);
-			listMattInfo.add(mattInfo);
-		}
-		MattInfo result = getResultMattInfo(listMattInfo, slotsInHour);
-		try {
-			createEventsFromMattInfo(result, slotsInHour, accessToken);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}    	
-    }
-	*/
-	private MattInfo getMattInfo(Matt matt, int slotsInHour) {
-		int srcSlotInHour = 60 / matt.getData().getTimeSlot();
-		int slotsInDay = 24 * slotsInHour;
-		long start = 0;
-		long end = 0;
-		minPoint = ((start = getStartPoint(matt.getData())) < minPoint) ? start : minPoint;
-		maxPoint = ((end = getEndPoint(matt.getData())) > maxPoint) ? end : maxPoint;
-		long startSlot = start / millisInHour * slotsInHour;
-		long endSlot = end / millisInHour * slotsInHour;
-		int slotSize = (int) (endSlot - startSlot);
-		ArrayList<Boolean> mattInfoSlots = new ArrayList<Boolean>();
-		for (int i = 0; i < slotSize; i++)
-			mattInfoSlots.add(false);
-		int intervals = (matt.getData().getEndHour() - matt.getData().getStartHour() + 1) * slotsInHour;
-		
-		if (intervals == slotsInDay && slotsInHour == srcSlotInHour) {
-			mattInfoSlots = matt.getSlots();
-		} else if (intervals < slotsInDay) {
-			
-			if (slotsInHour == srcSlotInHour){
-				arrangeEqualMattInfoSlots(matt, mattInfoSlots, slotsInDay, intervals, slotSize);
-			}
-			
-			else if (slotsInHour > srcSlotInHour) {
-				arrangeShortMattInfoSlots(matt, mattInfoSlots, slotsInDay, intervals, slotSize, slotsInHour, srcSlotInHour);
-			}
-			
-			else if (slotsInHour < srcSlotInHour) {
-				arrangeLongMattInfoSlots(matt, mattInfoSlots, slotsInDay, intervals, slotSize, slotsInHour, srcSlotInHour);
-			}
-			
-		}
-		return new MattInfo(startSlot, endSlot, mattInfoSlots, slotsInHour);
-	}
-
-
-//	 MattInfo slots arrangement in case of srcSlotInHour and slotInHour are equal and daily matt interval doesn't last whole day.
-	
-	private void arrangeEqualMattInfoSlots(Matt matt, ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals, int slotSize) {
-		int dstSlot = 0;
-		int srcSlot = 0;
-		while (dstSlot < slotSize) {
-			if (dstSlot % slotsInDay < intervals){
-				mattInfoSlots.set(dstSlot++, matt.getSlots().get(srcSlot++));
-			}else{
-				srcSlot++; 
-				dstSlot++;
-			}
-		}
-	}
-
-	
-//	 	MattInfo slots arrangement in case of a slotInHour is shorter than srcSlotInHour and daily matt interval doesn't last whole day.
-	
-	private void arrangeShortMattInfoSlots(Matt matt,
-			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
-			int slotSize, int slotsInHour, int srcSlotInHour) {
-		int ratio;
-		int dstSlot = 0;
-		int srcSlot = 0;
-		while (dstSlot < slotSize) {
-			ratio = slotsInHour / srcSlotInHour;
-			if (dstSlot % slotsInDay < intervals){
-				for (int j = 0; j < ratio; j++)
-					mattInfoSlots.set(dstSlot++, matt.getSlots().get(srcSlot));
-				srcSlot++;
-			}else{
-				srcSlot++;
-				dstSlot+=ratio;
-			}
-		}
-	}
-
-	
-//	 MattInfo slots arrangement in case of a slotInHour is longer than srcSlotInHour and daily matt interval doesn't last whole day.
-	 
-	private void arrangeLongMattInfoSlots(Matt matt,
-			ArrayList<Boolean> mattInfoSlots, int slotsInDay, int intervals,
-			int slotSize, int slotsInHour, int srcSlotInHour) {
-		int dstSlot = 0;
-		int srcSlot = 0;
-		int ratio;
-		while (dstSlot < slotSize) {
-			ratio = srcSlotInHour / slotsInHour;
-			if (dstSlot % slotsInDay < intervals) {
-				Boolean value = false;
-				for (int j = 0; j < ratio; j++)
-					value = value || matt.getSlots().get(srcSlot++);
-				mattInfoSlots.set(dstSlot++, value);
-			}else{
-				srcSlot+=ratio;
-				dstSlot++;
-			}
-		}
-	}
-
-	private MattInfo getResultMattInfo(List<MattInfo> listMattInfo, int slotsInHour) {
-		long startSlot = minPoint / millisInHour * slotsInHour;
-		long endSlot = maxPoint / millisInHour * slotsInHour;
-		int slotSize = (int) (endSlot - startSlot);
-		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
-		for (long i = 0; i < slotSize; i++)
-			resultSlots.add(false);
-		long currentSlot = startSlot;
-		ListIterator<Boolean> litr = resultSlots.listIterator();
-		while (litr.hasNext()) {
-			litr.next();
-			for (MattInfo mattInfo : listMattInfo) {
-				if (currentSlot >= mattInfo.startPoint && currentSlot <= mattInfo.endPoint) {
-					if (mattInfo.slots.get((int) (currentSlot - mattInfo.startPoint))) {
-						litr.set(false);
-						break;
-					} else {
-						litr.set(true);
-					}
-				}
-			}
-			currentSlot++;
-		}
-		return new MattInfo(startSlot, endSlot, resultSlots, slotsInHour);
-	}
-
-	private void createEventsFromMattInfo(MattInfo mattInfo, int slotsInHour, String accessToken) throws IOException { 
-		CalendarList calendarList = calendarService.calendarList().list().execute();	
-		List<CalendarListEntry> items = calendarList.getItems();
-		for (CalendarListEntry calendarListEntry : items) {
-			if (calendarListEntry.getSummary().equals(MAT_NAME)) {
-				calendarService.calendars().delete(calendarListEntry.getId()).execute();
-				System.out.println(calendarListEntry.getId());
-			}
-		}
-		Calendar ourCalendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
-		long currentSlot = mattInfo.startPoint;
-		for (Boolean slot : mattInfo.slots) {
-			if (slot) {
-				try {
-					addEvent(ourCalendar, currentSlot, slotsInHour);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			currentSlot++;
-		}
-	}
-    
-	private void addEvent(Calendar calendar, long startPoint, int slotsInHour) throws IOException {
-		Event event = new Event();
-		event.setSummary(EVENT_NAME);
-		Date startDate = new Date(startPoint * millisInHour / slotsInHour);
-		System.out.println(startDate.toString());
-		Date endDate = new Date(startDate.getTime() + millisInHour / 2);
-		DateTime start = new DateTime(startDate, TimeZone.getTimeZone("UTC"));
-		event.setStart(new EventDateTime().setDateTime(start));
-		DateTime end = new DateTime(endDate, TimeZone.getTimeZone("UTC"));
-		event.setEnd(new EventDateTime().setDateTime(end));
-		calendarService.events().insert(calendar.getId(), event)
-				.execute();
-	}
-
 }
