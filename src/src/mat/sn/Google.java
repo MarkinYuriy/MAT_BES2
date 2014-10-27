@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -81,6 +80,7 @@ public class Google extends SocialNetwork {
     private com.google.api.services.calendar.Calendar calendarService;
 	private static final String MAT_NAME = "My Available Time";
 	private final static long millisInHour = 3600000;
+	private static final long timeZoneShift = 1*millisInHour;
 
     //current feed's URL request
     private static final String contactsRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
@@ -228,89 +228,71 @@ public class Google extends SocialNetwork {
 //****************************************************************************************************************
 
     @Override
-	List<Boolean> getSlots(MattData interval, String accessToken){
-		int dayInterval = (interval.getEndHour() - interval.getStartHour())
-				* (60 / interval.getTimeSlot());
-		long millisInSlot = interval.getTimeSlot()*60000;
-		ArrayList<Boolean> slots = new ArrayList<Boolean>();
-		ArrayList<Boolean> resultSlots = new ArrayList<Boolean>();
+	List<Boolean> getSlots(MattData mattData, String accessToken){
 		GoogleCredential credential = getCredential(accessToken);
 		calendarService = new com.google.api.services.calendar.Calendar.Builder(TRANSPORT, JSON_FACTORY, credential)
 			.setApplicationName(APPLICATION_NAME).build();  
-		CalendarList calendarList = null;
-		String idCalendar = null;
-		Events events = null;
-		long startDate = getStartPoint(interval);
-		long endDate = getEndPoint(interval);
-		long startSlot = startDate / millisInSlot;
-		long endSlot = endDate / millisInSlot;
-		DateTime startDateTime = new DateTime(startDate);
-		DateTime endDateTime = new DateTime(endDate);
-		System.out.println(startDateTime +" "+endDateTime);
-		System.out.println(startSlot + " " + endSlot);
-		long resultSize = endSlot - startSlot;
-		for (long i = 0; i < resultSize; i++)
-			slots.add(false);
-		System.out.println(slots.toString());
+		List<CalendarListEntry> items = null;
 		try {
-			calendarList = calendarService.calendarList().list().execute();
+			CalendarList calendarList = calendarService.calendarList().list().execute();
+			items = calendarList.getItems();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		List<CalendarListEntry> items = calendarList.getItems();
-		for (CalendarListEntry calendarListEntry : items) {
+		int countDay = mattData.getnDays();
+		int countSlotsInDay = (mattData.getEndHour() - mattData.getStartHour())	* (60 / mattData.getTimeSlot());
+		int countSlots =countDay*countSlotsInDay;
+		long startDateFirst = mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour + timeZoneShift;
+		long endDateFirst = mattData.getStartDate().getTime() + mattData.getEndHour() * millisInHour + timeZoneShift;
+System.out.println(mattData.getStartDate().toGMTString());
+System.out.println(new Date(mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour).toGMTString());
+System.out.println(new Date(startDateFirst).toGMTString());
+		ArrayList<Boolean> slotsList = new ArrayList<Boolean>();
+		for(int i=0; i<countSlots;i++) slotsList.add(false);
+System.out.println(slotsList);
+		for (CalendarListEntry calendarListEntry : items){
+System.out.println(calendarListEntry.getSummary());
 			if (!calendarListEntry.getSummary().equals(MAT_NAME)) {
-				idCalendar = calendarListEntry.getId();
-				try {
-					events = calendarService.events().list(idCalendar)
+				String idCalendar = calendarListEntry.getId();
+				DateTime startDateTime = new DateTime(startDateFirst);
+				DateTime endDateTime = new DateTime(endDateFirst);
+				Events events = null;
+				ArrayList<Boolean> slotsMatt = new ArrayList<Boolean>();
+				for(int day=0; day < countDay; day++){
+System.out.println("day "+day);
+					startDateTime = new DateTime(startDateFirst+24*millisInHour*day, 0);
+					endDateTime = new DateTime(endDateFirst+24*millisInHour*day, 0);
+System.out.println(startDateTime + "  -  " + endDateTime);
+					try {
+						events = calendarService.events().list(idCalendar)
 							.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
-				} catch (IOException e) {
-					e.printStackTrace();
+System.out.println(events);
+					} catch (IOException e) {
+						e.printStackTrace();
+						return null;
+					}
+					ArrayList<Boolean> slotsDay = new ArrayList<Boolean>();
+					for (long i = 0; i < countSlotsInDay; i++)
+						slotsDay.add(false);
+					List<Event> listEvents = events.getItems();
+					for (Event event : listEvents) {
+System.out.println(event);
+						EventMAT eventMAT = new EventMAT(event);
+System.out.println(eventMAT);
+						eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
+System.out.println(slotsDay);
+					}
+					slotsMatt.addAll(slotsDay);
+System.out.println(slotsMatt);
 				}
-				List<Event> listEvents = events.getItems();
-				for (Event event : listEvents) {
-
-					System.out.println(event.getSummary());
-					System.out.println(event.getId());
-					System.out.println(event.getStart().getDateTime());
-					System.out.println(event.getEnd().getDateTime());
-
-					long startEvent;
-					long endEvent;
-					if (event.getStart().getDate() == null) { //check if a whole-day event calendar
-						startEvent = (event.getStart().getDateTime()).getValue() / millisInSlot;
-						endEvent = (event.getEnd().getDateTime()).getValue() / millisInSlot;
-					} else {
-						startEvent = (event.getStart().getDate()).getValue() / millisInSlot;
-						endEvent = (event.getEnd().getDate()).getValue() / millisInSlot;
-					} 					
-					if (startEvent < startSlot)	startEvent = startSlot;
-					if (endEvent > endSlot) endEvent = endSlot;
-					for (; startEvent < endEvent; startEvent++)
-						slots.set((int) (startEvent - startSlot), true);
-				}
+System.out.println(slotsList);
+				for(int i=0; i < countSlots; i++) if(slotsMatt.get(i)) slotsList.set(i, true);
+System.out.println(slotsList);
 			}
 		}
-		for (int index = 0; index < resultSize;) {
-			resultSlots.addAll(slots.subList(index, index + dayInterval));
-			index = index + 24 * (60 / interval.getTimeSlot());
-		}
-		return resultSlots;
+		return slotsList;
 	}
     
-//****************************************************************************************************************
-
-	private long getStartPoint(MattData data) {
-		return data.getStartDate().getTime() + data.getStartHour() * millisInHour;
-	}
-
-	private long getEndPoint(MattData data) {
-		return data.getStartDate().getTime()
-				+ ((data.getnDays() - 1) * 24 + data.getEndHour()/* + 1*/) * millisInHour;
-	}
-    
-//****************************************************************************************************************
-
     @Override
 	void setMatCalendar(List<Matt> matts, String accessToken) {
 		GoogleCredential credential = getCredential(accessToken);
@@ -323,7 +305,6 @@ public class Google extends SocialNetwork {
 			for (CalendarListEntry calendarListEntry : items) {
 				if (calendarListEntry.getSummary().equals(MAT_NAME)) {
 					calendarService.calendars().delete(calendarListEntry.getId()).execute();
-					System.out.println(calendarListEntry.getId());
 				}
 			}
 			calendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
@@ -335,40 +316,38 @@ public class Google extends SocialNetwork {
 			int nDays = matt.getData().getnDays();//number of days
 			Date startDate  = matt.getData().getStartDate();
 			int startHour = matt.getData().getStartHour();
-			int endHour = matt.getData().getEndHour();
 			int timeSlot = matt.getData().getTimeSlot(); //in minutes
 			ArrayList<Boolean> slots =matt.getSlots();
 			int slotsByDay = slots.size()/nDays;
-			long currentData = startDate.getTime()+startHour*millisInHour;
+			long currentData = startDate.getTime()+startHour*millisInHour/*+timeZoneShift*/;
 			int currentSlot = 1;
-			for(Boolean slot: slots)
+			for(Boolean slot: slots){
 				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
 					event.setSummary(name);
 					EventDateTime eventDTS = new EventDateTime();
-					eventDTS.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
-					System.out.println("start "+eventDTS);
+//					eventDTS.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
+					eventDTS.setDateTime(new DateTime(currentData));
 					currentData+=timeSlot*millisInHour/60;
 					EventDateTime eventDTE = new EventDateTime();
-					eventDTE.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
-					System.out.println("end "+eventDTE);
+					eventDTE.setDateTime(new DateTime(currentData));
 					event.setEnd(eventDTE);
 					event.setStart(eventDTS);
 System.out.println(event);
-					if((currentSlot++)%slotsByDay==0)
-						currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
 					try {
 						calendarService.events().insert(calendar.getId(), event).execute();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				} else {
 					currentData+=timeSlot*millisInHour/60;
-					if(slotsByDay==currentSlot++)
-						currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
-				}
-
+/*					if(slotsByDay==currentSlot++)
+						currentData=startDate.getTime()+startHour*millisInHour+timeZoneShift+currentSlot/slotsByDay*24*millisInHour;
+*/				}
+				if((currentSlot++)%slotsByDay==0)
+					currentData=startDate.getTime()+startHour*millisInHour/*+timeZoneShift*/+currentSlot/slotsByDay*24*millisInHour;
+				
+			}
 		}
     }
 }

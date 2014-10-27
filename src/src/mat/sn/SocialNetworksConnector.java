@@ -123,7 +123,9 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 		for (int i=0; i<snNames.length; i++){
 			try{
 				slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(interval, getToken(username, snNames[i])));
-			} catch(Exception e){ }
+			} catch(Exception e){ 
+				e.printStackTrace();
+			}
 		}
 		return aggregateSlotsLists(slotsLists);
 	}
