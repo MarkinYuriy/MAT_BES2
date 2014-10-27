@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
-import java.util.TimeZone;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -33,8 +32,6 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 
-//import com.google.api.client.json.jackson2.JacksonFactory;
-//import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.CalendarList;
@@ -113,7 +110,8 @@ public class Google extends SocialNetwork {
             }
         	return contacts;
         } catch (Exception e) {
-            throw new SecurityException(SocialNetworksConnector.AUTH_ERROR);
+            //throw new SecurityException(SocialNetworksConnector.AUTH_ERROR);
+            return null;
         }
     }
 //****************************************************************************************************************
@@ -128,8 +126,9 @@ public class Google extends SocialNetwork {
             String accessToken = tokenResponse.getAccessToken();
             String refreshToken = tokenResponse.getRefreshToken();
             return new TokenData(accessToken, refreshToken);
-        } catch (IOException e1) {
-            throw new SecurityException(SocialNetworksConnector.AUTH_ERROR);
+        } catch (Exception e1) {
+            //throw new SecurityException(SocialNetworksConnector.AUTH_ERROR);
+        	return null;
         }
     }
     
@@ -141,8 +140,9 @@ public class Google extends SocialNetwork {
                             CLIENT_ID, CLIENT_SECRET).setScopes(scopes).execute();
             token.setAccessToken(tokenResponse.getAccessToken());
             return true;
-        } catch (IOException e) {
-            throw new SecurityException(SocialNetworksConnector.NO_AUTH);
+        } catch (Exception e) {
+           // throw new SecurityException(SocialNetworksConnector.NO_AUTH);
+        	return false;
         }
     }
 //****************************************************************************************************************
@@ -163,31 +163,29 @@ public class Google extends SocialNetwork {
 
     @Override
     public boolean shareByMail(String userName, String urlMatt, String[] contacts, String accessToken) {
-
-    	GoogleCredential credential = getCredential(accessToken);
-    	Gmail service = new Gmail.Builder(TRANSPORT, JSON_FACTORY, credential)
-    		.setApplicationName(APPLICATION_NAME).build();
-    	Message message;
-    	MimeMessage email;
-    
-    	email = createEmail(contacts, userName, "My Available Time - Calendar", urlMatt, null, null);
-    	message =  createMessageWithEmail(email);
     	try {
+    		GoogleCredential credential = getCredential(accessToken);
+    		Gmail service = new Gmail.Builder(TRANSPORT, JSON_FACTORY, credential)
+    			.setApplicationName(APPLICATION_NAME).build();
+    		Message message;
+    		MimeMessage email;
+    		email = createEmail(contacts, userName, "My Available Time - Calendar", urlMatt, null, null);
+    		message =  createMessageWithEmail(email);
     		service.users().messages().send("me", message).execute();
-    	} catch (IOException e) {
-    		e.printStackTrace();
+    	} catch (Exception e) {
+    		//e.printStackTrace();
     		return false;  
     	} 
     	return true; 
     }
     
-    private MimeMessage createEmail(String[] to, String from,
-    						String subject, String bodyText, String fileDir, String filename){
-    	Properties props = new Properties();
-    	Session session = Session.getDefaultInstance(props, null);
-    	MimeMessage email = new MimeMessage(session);
-    	InternetAddress[] tAddress = new InternetAddress[to.length];
+    private MimeMessage createEmail(String[] to, String from, String subject, String bodyText, String fileDir, String filename){
     	try {
+    		Properties props = new Properties();
+    		Session session = Session.getDefaultInstance(props, null);
+    		MimeMessage email = new MimeMessage(session);
+    		InternetAddress[] tAddress = new InternetAddress[to.length];
+    	
     		for (int i = 0; i < to.length; i++){
     			tAddress[i] = new InternetAddress(to[i]);
     		}
@@ -202,23 +200,20 @@ public class Google extends SocialNetwork {
     		Multipart multipart = new MimeMultipart();
     		multipart.addBodyPart(mimeBodyPart);
     		email.setContent(multipart);
-    	} catch (AddressException e) { 
-    		e.printStackTrace();
-    	} catch (MessagingException e) { 
-    		e.printStackTrace();
-    	}
-    	return email;
+    		return email;
+    	} catch (Exception e) { 
+    		//e.printStackTrace();
+    		return null;
+    	} 
     }
     
     private Message createMessageWithEmail(MimeMessage email)  {
     	ByteArrayOutputStream bytes = new ByteArrayOutputStream();
     	try {
     		email.writeTo(bytes);
-    	} catch (IOException e) { 
-    		e.printStackTrace();
-    	} catch (MessagingException e) { 
-    		e.printStackTrace();
-    	} 
+    	} catch (Exception e) { 
+    		//e.printStackTrace();
+    	}
     	String encodedEmail = Base64.encodeBase64URLSafeString(bytes.toByteArray());
     	Message message = new Message();
     	message.setRaw(encodedEmail); 
@@ -236,22 +231,18 @@ public class Google extends SocialNetwork {
 		try {
 			CalendarList calendarList = calendarService.calendarList().list().execute();
 			items = calendarList.getItems();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			//e.printStackTrace();
+			return null;
 		}
 		int countDay = mattData.getnDays();
 		int countSlotsInDay = (mattData.getEndHour() - mattData.getStartHour())	* (60 / mattData.getTimeSlot());
 		int countSlots =countDay*countSlotsInDay;
 		long startDateFirst = mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour + timeZoneShift;
 		long endDateFirst = mattData.getStartDate().getTime() + mattData.getEndHour() * millisInHour + timeZoneShift;
-System.out.println(mattData.getStartDate().toGMTString());
-System.out.println(new Date(mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour).toGMTString());
-System.out.println(new Date(startDateFirst).toGMTString());
 		ArrayList<Boolean> slotsList = new ArrayList<Boolean>();
 		for(int i=0; i<countSlots;i++) slotsList.add(false);
-System.out.println(slotsList);
 		for (CalendarListEntry calendarListEntry : items){
-System.out.println(calendarListEntry.getSummary());
 			if (!calendarListEntry.getSummary().equals(MAT_NAME)) {
 				String idCalendar = calendarListEntry.getId();
 				DateTime startDateTime = new DateTime(startDateFirst);
@@ -259,16 +250,13 @@ System.out.println(calendarListEntry.getSummary());
 				Events events = null;
 				ArrayList<Boolean> slotsMatt = new ArrayList<Boolean>();
 				for(int day=0; day < countDay; day++){
-System.out.println("day "+day);
 					startDateTime = new DateTime(startDateFirst+24*millisInHour*day, 0);
 					endDateTime = new DateTime(endDateFirst+24*millisInHour*day, 0);
-System.out.println(startDateTime + "  -  " + endDateTime);
 					try {
 						events = calendarService.events().list(idCalendar)
 							.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
-System.out.println(events);
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (Exception e) {
+						//e.printStackTrace();
 						return null;
 					}
 					ArrayList<Boolean> slotsDay = new ArrayList<Boolean>();
@@ -276,18 +264,12 @@ System.out.println(events);
 						slotsDay.add(false);
 					List<Event> listEvents = events.getItems();
 					for (Event event : listEvents) {
-System.out.println(event);
 						EventMAT eventMAT = new EventMAT(event);
-System.out.println(eventMAT);
 						eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
-System.out.println(slotsDay);
 					}
 					slotsMatt.addAll(slotsDay);
-System.out.println(slotsMatt);
 				}
-System.out.println(slotsList);
 				for(int i=0; i < countSlots; i++) if(slotsMatt.get(i)) slotsList.set(i, true);
-System.out.println(slotsList);
 			}
 		}
 		return slotsList;
@@ -308,8 +290,8 @@ System.out.println(slotsList);
 				}
 			}
 			calendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
-		} catch (IOException e1) {
-			e1.printStackTrace();
+		} catch (Exception e1) {
+			//e1.printStackTrace();
 		}
 		for (Matt matt : matts) {
 			String name = matt.getData().getName();//name of matt
@@ -319,21 +301,19 @@ System.out.println(slotsList);
 			int timeSlot = matt.getData().getTimeSlot(); //in minutes
 			ArrayList<Boolean> slots =matt.getSlots();
 			int slotsByDay = slots.size()/nDays;
-			long currentData = startDate.getTime()+startHour*millisInHour/*+timeZoneShift*/;
+			long currentData = startDate.getTime()+startHour*millisInHour;
 			int currentSlot = 1;
 			for(Boolean slot: slots){
 				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
 					event.setSummary(name);
 					EventDateTime eventDTS = new EventDateTime();
-//					eventDTS.setDateTime(new DateTime(new Date(currentData), TimeZone.getTimeZone("UTC")));
 					eventDTS.setDateTime(new DateTime(currentData));
 					currentData+=timeSlot*millisInHour/60;
 					EventDateTime eventDTE = new EventDateTime();
 					eventDTE.setDateTime(new DateTime(currentData));
 					event.setEnd(eventDTE);
 					event.setStart(eventDTS);
-System.out.println(event);
 					try {
 						calendarService.events().insert(calendar.getId(), event).execute();
 					} catch (IOException e) {
@@ -341,11 +321,9 @@ System.out.println(event);
 					}
 				} else {
 					currentData+=timeSlot*millisInHour/60;
-/*					if(slotsByDay==currentSlot++)
-						currentData=startDate.getTime()+startHour*millisInHour+timeZoneShift+currentSlot/slotsByDay*24*millisInHour;
-*/				}
+				}
 				if((currentSlot++)%slotsByDay==0)
-					currentData=startDate.getTime()+startHour*millisInHour/*+timeZoneShift*/+currentSlot/slotsByDay*24*millisInHour;
+					currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
 				
 			}
 		}

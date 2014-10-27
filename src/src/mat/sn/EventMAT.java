@@ -21,9 +21,6 @@ public class EventMAT{
 			startTime = 0;
 			endTime = 1440;
 		} 					
-System.out.println(event);
-System.out.println(startTime);
-System.out.println(endTime);
 	}
 	
 	void setSlots(ArrayList<Boolean> slotsList, int startHour, int timeSlot){
@@ -37,5 +34,4 @@ System.out.println(endTime);
 			currentTime+=timeSlot;
 		}
 	}
-
 }
