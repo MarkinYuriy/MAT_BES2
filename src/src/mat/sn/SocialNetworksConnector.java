@@ -122,7 +122,7 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 		slotsLists.add(falsSlotsList);
 		for (int i=0; i<snNames.length; i++){
 			try{
-				slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(interval, getToken(username, snNames[i])));
+				slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(username, interval, getToken(username, snNames[i])));
 			} catch(Exception e){ 
 				e.printStackTrace();
 			}
@@ -153,5 +153,12 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 				getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
 			} catch(Exception e) { }
 		}
+//		setEvent("test event", username,  matts.get(0));//test
+	}
+
+	@Override
+	public void setEvent(String eventName, String userName, Matt matt) {
+		Google google = new Google();
+		google.setEvent(eventName, userName, matt, getToken(userName, SocialNetworksConnector.GOOGLE));
 	}
 }

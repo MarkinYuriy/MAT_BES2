@@ -13,5 +13,6 @@ public abstract class SocialNetwork{
     abstract boolean refreshToken(TokenData token);
     abstract String[] getApplicationData();
     abstract void setMatCalendar(List<Matt> matts, String accessToken);
-    abstract List<Boolean> getSlots(MattData interval, String accessToken);
+    abstract List<Boolean> getSlots(String userName, MattData interval, String accessToken);
+    abstract void setEvent(String eventName, String userName, Matt matt, String accessToken);
 }
