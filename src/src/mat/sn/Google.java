@@ -34,7 +34,9 @@ import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.CalendarList;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.Event.Reminders;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.EventReminder;
 import com.google.api.services.calendar.model.Events;
 import com.google.gdata.client.Query;
 import com.google.gdata.client.contacts.ContactsService;
@@ -260,6 +262,7 @@ public class Google extends SocialNetwork {
 						slotsDay.add(false);
 					List<Event> listEvents = events.getItems();
 					for (Event event : listEvents) {
+//System.out.println(event.getReminders());						
 						EventMAT eventMAT = new EventMAT(event);
 						eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
 					}
@@ -356,6 +359,19 @@ public class Google extends SocialNetwork {
 				eventDTE.setDateTime(new DateTime(currentData));
 				event.setEnd(eventDTE);
 				event.setStart(eventDTS);
+				Reminders rem = new Reminders();
+				rem.setUseDefault(false);
+				List<EventReminder> eventRems = new ArrayList<EventReminder>();
+				EventReminder eRemPop = new EventReminder();
+				eRemPop.setMethod("popup");
+				eRemPop.setMinutes(10);
+				eventRems.add(eRemPop);
+				EventReminder eRemEml = new EventReminder();
+				eRemEml.setMethod("email");
+				eRemEml.setMinutes(5);
+				eventRems.add(eRemEml);
+				rem.setOverrides(eventRems);
+				event.setReminders(rem);
 //System.out.println(event);
 				try {
 					calendarService.events().insert(userName, event).execute();
