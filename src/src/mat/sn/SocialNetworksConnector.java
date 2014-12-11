@@ -113,18 +113,20 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 //****************************************************************************************************************
 
 	@Override
-	public List<Boolean> getSlots(String username, String[] snNames, MattData interval) {
+	public List<Boolean> getSlots(String username, MattData interval) {
 		ArrayList<ArrayList<Boolean>> slotsLists = new ArrayList<ArrayList<Boolean>>();
 		ArrayList<Boolean> falsSlotsList = new ArrayList<Boolean>();
 		long countSlots = (interval.getEndHour()-interval.getStartHour())*60/interval.getTimeSlot()*interval.getnDays();
 		for (long i = 0; i < countSlots; i++)
 			falsSlotsList.add(false);
 		slotsLists.add(falsSlotsList);
+		String[] snNames=interval.getDownloadSN();
 		for (int i=0; i<snNames.length; i++){
-			try{
-				slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(username, interval, getToken(username, snNames[i])));
+			try{ 
+				if(snNames[i]!=null)
+					slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(username, interval, getToken(username, snNames[i])));
 			} catch(Exception e){ 
-				e.printStackTrace();
+				System.out.println(e.toString());
 			}
 		}
 		return aggregateSlotsLists(slotsLists);
@@ -147,12 +149,12 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 //****************************************************************************************************************
 
 	@Override
-	public void setMatCalendar(String username, String[] snNames, List<Matt> matts) {
-		for (int i=0; i<snNames.length; i++){
+	public void setMatCalendar(String username, List<Matt> matts) {
+/*		for (int i=0; i<snNames.length; i++){
 			try{		
 				getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
 			} catch(Exception e) { }
-		}
+		}*/
 //		setEvent("test event", username,  matts.get(0));//test
 	}
 
@@ -160,5 +162,19 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 	public void setEvent(String eventName, String userName, Matt matt) {
 		Google google = new Google();
 		google.setEvent(eventName, userName, matt, getToken(userName, SocialNetworksConnector.GOOGLE));
+	}
+
+	@Override
+	public HashMap<String, List<String>> getAvailableCalendars(String userName) {
+		String[] authSN = getAuthorizedSocialNames(userName);
+		HashMap<String, List<String>> availableCalendars = new HashMap<String, List<String>>();
+		for (int i=0; i<authSN.length; i++){
+			try{		
+				List<String> calendars = getInstance(authSN[i]).getCalendarNames(getToken(userName, authSN[i]));
+				if(calendars!=null)
+					availableCalendars.put(authSN[i], calendars);
+			} catch(Exception e) { }
+		}
+		return availableCalendars;
 	}
 }

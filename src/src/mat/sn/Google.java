@@ -16,6 +16,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import mat.IFrontConnector;
 import mat.Matt;
 import mat.MattData;
 
@@ -241,7 +242,7 @@ public class Google extends SocialNetwork {
 		for(int i=0; i<countSlots;i++) slotsList.add(false);
 		for (CalendarListEntry calendarListEntry : items){
 //			if (!calendarListEntry.getSummary().equals(MAT_NAME)) {
-			if (calendarListEntry.getId().equals(userName)) {
+			if (mattData.getDownloadCalendars(IFrontConnector.GOOGLE).contains(calendarListEntry.getId())) {
 			String idCalendar = calendarListEntry.getId();
 				DateTime startDateTime = new DateTime(startDateFirst);
 				DateTime endDateTime = new DateTime(endDateFirst);
@@ -386,6 +387,26 @@ public class Google extends SocialNetwork {
 			
 		}
 	
+	}
+
+	@Override
+	List<String> getCalendarNames(String accessToken) {
+		List<String> calendarNames = new ArrayList<String>();
+		GoogleCredential credential = getCredential(accessToken);
+		calendarService = new com.google.api.services.calendar.Calendar.Builder(TRANSPORT, JSON_FACTORY, credential)
+			.setApplicationName(APPLICATION_NAME).build();  
+		List<CalendarListEntry> items = null;
+		try {
+			CalendarList calendarList = calendarService.calendarList().list().execute();
+			items = calendarList.getItems();
+		} catch (Exception e) {
+			return null;
+		}
+		for (CalendarListEntry calendarListEntry : items){
+			calendarNames.add(calendarListEntry.getSummary());
+		}
+		if(calendarNames.size()==0) return null;
+		return calendarNames;
 	}
 
 }
