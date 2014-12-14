@@ -177,4 +177,14 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 		}
 		return availableCalendars;
 	}
+
+	@Override
+	public void uploadMatt(String username, mat.Matt matt) {
+		String[] snNames = matt.getData().getUploadSN();
+		for (int i=0; i<snNames.length; i++){
+			try{		
+				getInstance(snNames[i]).uploadMatt(matt, getToken(username, snNames[i]));
+			} catch(Exception e) { }
+		}
+	}
 }

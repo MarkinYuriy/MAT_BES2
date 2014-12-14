@@ -336,10 +336,10 @@ public class Google extends SocialNetwork {
 		GoogleCredential credential = getCredential(accessToken);
 		calendarService = new com.google.api.services.calendar.Calendar.Builder(
 				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
-		List<CalendarListEntry> items = null;
+//		List<CalendarListEntry> items = null;
 		try {
-			CalendarList calendarList = calendarService.calendarList().list().execute();	
-			items = calendarList.getItems();
+//			CalendarList calendarList = calendarService.calendarList().list().execute();	
+//			items = calendarList.getItems();
 		} catch (Exception e1) {}
 		int nDays = matt.getData().getnDays();//number of days
 		Date startDate  = matt.getData().getStartDate();
@@ -409,4 +409,67 @@ public class Google extends SocialNetwork {
 		return calendarNames;
 	}
 
+	@Override
+	void uploadMatt(Matt matt, String accessToken) {
+		List<String> calendars = matt.getData().getDownloadCalendars(IFrontConnector.GOOGLE);
+		if(calendars != null){
+			GoogleCredential credential = getCredential(accessToken);
+			calendarService = new com.google.api.services.calendar.Calendar.Builder(
+					TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
+//			List<CalendarListEntry> items = null;
+			try {
+//				CalendarList calendarList = calendarService.calendarList().list().execute();	
+//				items = calendarList.getItems();
+			} catch (Exception e1) {}
+			String name = matt.getData().getName();//name of matt
+			int nDays = matt.getData().getnDays();//number of days
+			Date startDate  = matt.getData().getStartDate();
+			int startHour = matt.getData().getStartHour();
+			int timeSlot = matt.getData().getTimeSlot(); //in minutes
+			ArrayList<Boolean> slots =matt.getSlots();
+			int slotsByDay = slots.size()/nDays;
+			long currentData = startDate.getTime()+startHour*millisInHour;
+			int currentSlot = 1;
+			for(Boolean slot: slots){
+				if(!slot){
+					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
+					event.setSummary(name);
+					EventDateTime eventDTS = new EventDateTime();
+					eventDTS.setDateTime(new DateTime(currentData));
+					currentData+=timeSlot*millisInHour/60;
+					EventDateTime eventDTE = new EventDateTime();
+					eventDTE.setDateTime(new DateTime(currentData));
+					event.setEnd(eventDTE);
+					event.setStart(eventDTS);
+					Reminders rem = new Reminders();
+					rem.setUseDefault(false);
+					List<EventReminder> eventRems = new ArrayList<EventReminder>();
+					EventReminder eRemPop = new EventReminder();
+					eRemPop.setMethod("popup");
+					eRemPop.setMinutes(10);
+					eventRems.add(eRemPop);
+					EventReminder eRemEml = new EventReminder();
+					eRemEml.setMethod("email");
+					eRemEml.setMinutes(5);
+					eventRems.add(eRemEml);
+					rem.setOverrides(eventRems);
+					event.setReminders(rem);
+	//System.out.println(event);
+					for(int i = 0; i<calendars.size(); i++){
+						try {
+							calendarService.events().insert(calendars.get(i), event).execute();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				} else {
+					currentData+=timeSlot*millisInHour/60;
+				}
+				if((currentSlot++)%slotsByDay==0)
+					currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
+				
+			}
+		
+		}
+	}
 }
