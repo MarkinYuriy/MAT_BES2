@@ -31,7 +31,7 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.client.util.DateTime;
-import com.google.api.services.calendar.model.Calendar;
+//import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.CalendarList;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
@@ -75,7 +75,7 @@ public class Google extends SocialNetwork {
     private static final int MAX_COUNT_EMAILS = 200; 
 
     private com.google.api.services.calendar.Calendar calendarService;
-	private static final String MAT_NAME = "My Available Time";
+//	private static final String MAT_NAME = "My Available Time";
 	private final static long millisInHour = 3600000;
 	//current feed's URL request
     private static final String contactsRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
@@ -221,7 +221,9 @@ public class Google extends SocialNetwork {
 //****************************************************************************************************************
 
     @Override
-	List<Boolean> getSlots(String userName, MattData mattData, String accessToken){
+	Matt getSlots(String userName, Matt matt, String accessToken){
+    	MattData mattData = matt.getData();
+		ArrayList<Boolean> slotsList = matt.getSlots();
 		GoogleCredential credential = getCredential(accessToken);
 		calendarService = new com.google.api.services.calendar.Calendar.Builder(TRANSPORT, JSON_FACTORY, credential)
 			.setApplicationName(APPLICATION_NAME).build();  
@@ -238,12 +240,9 @@ public class Google extends SocialNetwork {
 		int countSlots =countDay*countSlotsInDay;
 		long startDateFirst = mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour /*+ timeZoneShift*/;
 		long endDateFirst = mattData.getStartDate().getTime() + mattData.getEndHour() * millisInHour /*+ timeZoneShift*/;
-		ArrayList<Boolean> slotsList = new ArrayList<Boolean>();
-		for(int i=0; i<countSlots;i++) slotsList.add(false);
 		for (CalendarListEntry calendarListEntry : items){
-//			if (!calendarListEntry.getSummary().equals(MAT_NAME)) {
 			if (mattData.getDownloadCalendars(IFrontConnector.GOOGLE).contains(calendarListEntry.getId())) {
-			String idCalendar = calendarListEntry.getId();
+				String idCalendar = calendarListEntry.getId();
 				DateTime startDateTime = new DateTime(startDateFirst);
 				DateTime endDateTime = new DateTime(endDateFirst);
 				Events events = null;
@@ -251,86 +250,44 @@ public class Google extends SocialNetwork {
 				for(int day=0; day < countDay; day++){
 					startDateTime = new DateTime(startDateFirst+24*millisInHour*day);
 					endDateTime = new DateTime(endDateFirst+24*millisInHour*day);
-					try {
-						events = calendarService.events().list(idCalendar)
-							.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
-					} catch (Exception e) {
-						//e.printStackTrace();
-						return null;
-					}
 					ArrayList<Boolean> slotsDay = new ArrayList<Boolean>();
 					for (long i = 0; i < countSlotsInDay; i++)
 						slotsDay.add(false);
-					List<Event> listEvents = events.getItems();
-					for (Event event : listEvents) {
-//System.out.println(event.getReminders());						
-						EventMAT eventMAT = new EventMAT(event);
-						eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
+					if(haveAvailableTimeInTheDay(slotsList, day, countSlotsInDay)){
+						try {
+							events = calendarService.events().list(idCalendar)
+								.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
+						} catch (Exception e) {
+							//e.printStackTrace();
+							return null;
+						}
+						List<Event> listEvents = events.getItems();
+						for (Event event : listEvents) {
+	//System.out.println(event.getReminders());						
+							EventMAT eventMAT = new EventMAT(event);
+							eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
+						}
 					}
 					slotsMatt.addAll(slotsDay);
 				}
 				for(int i=0; i < countSlots; i++) if(slotsMatt.get(i)) slotsList.set(i, true);
 			}
 		}
-		return slotsList;
+		matt.setSlots(slotsList);
+		return matt;
 	}
     
-    @Override
-	void setMatCalendar(List<Matt> matts, String accessToken) {
-		GoogleCredential credential = getCredential(accessToken);
-		calendarService = new com.google.api.services.calendar.Calendar.Builder(
-				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
-		Calendar calendar = null;
-		try {
-			CalendarList calendarList = calendarService.calendarList().list().execute();	
-			List<CalendarListEntry> items = calendarList.getItems();
-			for (CalendarListEntry calendarListEntry : items) {
-//System.out.println(calendarListEntry.getSummary()+" - "+calendarListEntry.getId());
-				if (calendarListEntry.getSummary().equals(MAT_NAME)) {
-					calendarService.calendars().delete(calendarListEntry.getId()).execute();
-				}
-			}
-			calendar = calendarService.calendars().insert(new Calendar().setSummary(MAT_NAME)).execute();
-		} catch (Exception e1) {
-			//e1.printStackTrace();
-		}
-		for (Matt matt : matts) {
-			String name = matt.getData().getName();//name of matt
-			int nDays = matt.getData().getnDays();//number of days
-			Date startDate  = matt.getData().getStartDate();
-			int startHour = matt.getData().getStartHour();
-			int timeSlot = matt.getData().getTimeSlot(); //in minutes
-			ArrayList<Boolean> slots =matt.getSlots();
-			int slotsByDay = slots.size()/nDays;
-			long currentData = startDate.getTime()+startHour*millisInHour;
-			int currentSlot = 1;
-			for(Boolean slot: slots){
-				if(!slot){
-					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
-					event.setSummary(name);
-					EventDateTime eventDTS = new EventDateTime();
-					eventDTS.setDateTime(new DateTime(currentData));
-					currentData+=timeSlot*millisInHour/60;
-					EventDateTime eventDTE = new EventDateTime();
-					eventDTE.setDateTime(new DateTime(currentData));
-					event.setEnd(eventDTE);
-					event.setStart(eventDTS);
-//System.out.println(event);
-					try {
-						calendarService.events().insert(calendar.getId(), event).execute();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				} else {
-					currentData+=timeSlot*millisInHour/60;
-				}
-				if((currentSlot++)%slotsByDay==0)
-					currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
-				
-			}
-		}
-    }
+
     
+	private boolean haveAvailableTimeInTheDay(ArrayList<Boolean> slotsList, int day,
+			int countSlotsInDay) {
+		int firstSlot = day*countSlotsInDay;
+		int lastSlot = firstSlot+countSlotsInDay;
+		for(int i=firstSlot; i<lastSlot; i++)
+			if(!slotsList.get(i)) return true;
+		return false;
+	}
+
 	@Override
 	public void setEvent(String eventName, String userName, Matt matt, String accessToken ) {
 		GoogleCredential credential = getCredential(accessToken);

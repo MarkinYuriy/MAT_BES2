@@ -1,6 +1,5 @@
 package mat.sn;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -8,7 +7,6 @@ import java.util.Set;
 
 import mat.IBackConnector;
 import mat.IFrontConnector;
-import mat.MattData;
 import mat.Matt;
 
 public class SocialNetworksConnector implements IFrontConnector, IBackConnector {
@@ -113,26 +111,20 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 //****************************************************************************************************************
 
 	@Override
-	public List<Boolean> getSlots(String username, MattData interval) {
-		ArrayList<ArrayList<Boolean>> slotsLists = new ArrayList<ArrayList<Boolean>>();
-		ArrayList<Boolean> falsSlotsList = new ArrayList<Boolean>();
-		long countSlots = (interval.getEndHour()-interval.getStartHour())*60/interval.getTimeSlot()*interval.getnDays();
-		for (long i = 0; i < countSlots; i++)
-			falsSlotsList.add(false);
-		slotsLists.add(falsSlotsList);
-		String[] snNames=interval.getDownloadSN();
+	public mat.Matt getSlots(String username, mat.Matt matt) {
+		String[] snNames=matt.getData().getDownloadSN();
 		for (int i=0; i<snNames.length; i++){
 			try{ 
 				if(snNames[i]!=null)
-					slotsLists.add((ArrayList<Boolean>) getInstance(snNames[i]).getSlots(username, interval, getToken(username, snNames[i])));
+					matt = getInstance(snNames[i]).getSlots(username, matt, getToken(username, snNames[i]));
 			} catch(Exception e){ 
-				System.out.println(e.toString());
+				//System.out.println(e.toString());
 			}
 		}
-		return aggregateSlotsLists(slotsLists);
+		return matt;
 	}
 	
-	private List<Boolean> aggregateSlotsLists(ArrayList<ArrayList<Boolean>> slotsLists) {
+/*	private ArrayList<Boolean> aggregateSlotsLists(ArrayList<ArrayList<Boolean>> slotsLists) {
 		ArrayList<Boolean> resultSlots = slotsLists.get(0);
 		int countSlots = resultSlots.size();
 		for(int i=0; i<countSlots; i++){
@@ -144,19 +136,9 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 			}
 		}
 		return resultSlots;
-	}
+	}*/
 
 //****************************************************************************************************************
-
-	@Override
-	public void setMatCalendar(String username, List<Matt> matts) {
-/*		for (int i=0; i<snNames.length; i++){
-			try{		
-				getInstance(snNames[i]).setMatCalendar(matts, getToken(username, snNames[i]));
-			} catch(Exception e) { }
-		}*/
-//		setEvent("test event", username,  matts.get(0));//test
-	}
 
 	@Override
 	public void setEvent(String eventName, String userName, Matt matt) {

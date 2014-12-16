@@ -3,7 +3,6 @@ package mat.sn;
 import java.util.List;
 
 import mat.Matt;
-import mat.MattData;
 
 public abstract class SocialNetwork{
     //Methods that all the social networks must implement
@@ -12,8 +11,7 @@ public abstract class SocialNetwork{
     abstract TokenData retrieveToken(String authCode);
     abstract boolean refreshToken(TokenData token);
     abstract String[] getApplicationData();
-    abstract void setMatCalendar(List<Matt> matts, String accessToken);
-    abstract List<Boolean> getSlots(String userName, MattData interval, String accessToken);
+    abstract Matt getSlots(String userName, Matt matt, String accessToken);
     abstract void setEvent(String eventName, String userName, Matt matt, String accessToken);
 	abstract List<String> getCalendarNames(String accessToken);
 	abstract void uploadMatt(Matt matt, String accessToke);
