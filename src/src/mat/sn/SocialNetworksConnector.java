@@ -169,4 +169,10 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 			} catch(Exception e) { }
 		}
 	}
+
+	@Override
+	public void sendInvitation(String userName, String name, String tableName, String[] contacts) {
+		// TODO Auto-generated method stub
+		
+	}
 }
