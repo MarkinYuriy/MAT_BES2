@@ -15,4 +15,5 @@ public abstract class SocialNetwork{
     abstract void setEvent(String eventName, String userName, Matt matt, String accessToken);
 	abstract List<String> getCalendarNames(String accessToken);
 	abstract void uploadMatt(Matt matt, String accessToke);
+    abstract boolean sendInvitation(String userName, String inviteLetter, String[] contacts, String accessToken);
 }

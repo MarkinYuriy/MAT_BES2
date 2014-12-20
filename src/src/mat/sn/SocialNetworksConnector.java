@@ -124,20 +124,6 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 		return matt;
 	}
 	
-/*	private ArrayList<Boolean> aggregateSlotsLists(ArrayList<ArrayList<Boolean>> slotsLists) {
-		ArrayList<Boolean> resultSlots = slotsLists.get(0);
-		int countSlots = resultSlots.size();
-		for(int i=0; i<countSlots; i++){
-			for(ArrayList<Boolean> currentList : slotsLists){
-				if(currentList.get(i)){
-					resultSlots.set(i , true);
-					break;
-				}
-			}
-		}
-		return resultSlots;
-	}*/
-
 //****************************************************************************************************************
 
 	@Override
@@ -172,7 +158,12 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 
 	@Override
 	public void sendInvitation(String userName, String name, String tableName, String[] contacts) {
-		// TODO Auto-generated method stub
-		
+		String invitLetter = name + " invites you for " + tableName 
+				+ ". Please access www.myavailabletime.com";
+		try{
+    		getInstance(IFrontConnector.GOOGLE).sendInvitation(userName, invitLetter, contacts, getToken(userName, IFrontConnector.GOOGLE));
+    	} catch(Exception e){ 
+    		System.out.println(e.toString());
+    	}
 	}
 }

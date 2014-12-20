@@ -31,6 +31,7 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.client.util.DateTime;
+import com.google.api.services.calendar.Calendar;
 //import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.CalendarList;
 import com.google.api.services.calendar.model.CalendarListEntry;
@@ -75,7 +76,7 @@ public class Google extends SocialNetwork {
     private static final int MAX_COUNT_EMAILS = 200; 
 
     private com.google.api.services.calendar.Calendar calendarService;
-//	private static final String MAT_NAME = "My Available Time";
+	private static final String PREFIX_MAT = "MAT: ";
 	private final static long millisInHour = 3600000;
 	//current feed's URL request
     private static final String contactsRequestURL = "http://www.google.com/m8/feeds/contacts/default/full";
@@ -387,10 +388,11 @@ public class Google extends SocialNetwork {
 			int slotsByDay = slots.size()/nDays;
 			long currentData = startDate.getTime()+startHour*millisInHour;
 			int currentSlot = 1;
+			removUploadingMattFromCalendars(matt, calendarService);
 			for(Boolean slot: slots){
 				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
-					event.setSummary(name);
+					event.setSummary(PREFIX_MAT+name);
 					EventDateTime eventDTS = new EventDateTime();
 					eventDTS.setDateTime(new DateTime(currentData));
 					currentData+=timeSlot*millisInHour/60;
@@ -428,5 +430,31 @@ public class Google extends SocialNetwork {
 			}
 		
 		}
+	}
+
+	private void removUploadingMattFromCalendars(Matt matt, Calendar calendarService2) {
+		
+	}
+
+	@Override
+	boolean sendInvitation(String userName, String inviteLetter, String[] contacts, String accessToken) {
+		try {
+    		GoogleCredential credential = getCredential(accessToken);
+    		Gmail service = new Gmail.Builder(TRANSPORT, JSON_FACTORY, credential)
+    			.setApplicationName(APPLICATION_NAME).build();
+    		for(int i=0; i<contacts.length; i++){
+	    		Message message;
+	    		MimeMessage email;
+	    		String[] contact = new String[1];
+	    		contact[0] = contacts[i];
+	    		email = createEmail(contact, userName, "My Available Time - Invitation", "Dear " + contacts[i] + ". " + inviteLetter, null, null);
+	    		message =  createMessageWithEmail(email);
+	    		service.users().messages().send("me", message).execute();
+    		}
+    	} catch (Exception e) {
+    		//e.printStackTrace();
+    		return false;  
+    	} 
+    	return true; 
 	}
 }
