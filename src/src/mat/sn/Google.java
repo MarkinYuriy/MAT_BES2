@@ -233,7 +233,6 @@ public class Google extends SocialNetwork {
 			CalendarList calendarList = calendarService.calendarList().list().execute();
 			items = calendarList.getItems();
 		} catch (Exception e) {
-			//e.printStackTrace();
 			return null;
 		}
 		int countDay = mattData.getnDays();
@@ -259,7 +258,6 @@ public class Google extends SocialNetwork {
 							events = calendarService.events().list(idCalendar)
 								.setTimeMin(startDateTime).setTimeMax(endDateTime).execute();
 						} catch (Exception e) {
-							//e.printStackTrace();
 							return null;
 						}
 						List<Event> listEvents = events.getItems();
@@ -278,8 +276,6 @@ public class Google extends SocialNetwork {
 		return matt;
 	}
     
-
-    
 	private boolean haveAvailableTimeInTheDay(ArrayList<Boolean> slotsList, int day,
 			int countSlotsInDay) {
 		int firstSlot = day*countSlotsInDay;
@@ -294,11 +290,6 @@ public class Google extends SocialNetwork {
 		GoogleCredential credential = getCredential(accessToken);
 		calendarService = new com.google.api.services.calendar.Calendar.Builder(
 				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
-//		List<CalendarListEntry> items = null;
-		try {
-//			CalendarList calendarList = calendarService.calendarList().list().execute();	
-//			items = calendarList.getItems();
-		} catch (Exception e1) {}
 		int nDays = matt.getData().getnDays();//number of days
 		Date startDate  = matt.getData().getStartDate();
 		int startHour = matt.getData().getStartHour();
@@ -331,7 +322,6 @@ public class Google extends SocialNetwork {
 				eventRems.add(eRemEml);
 				rem.setOverrides(eventRems);
 				event.setReminders(rem);
-//System.out.println(event);
 				try {
 					calendarService.events().insert(userName, event).execute();
 				} catch (IOException e) {
@@ -342,9 +332,7 @@ public class Google extends SocialNetwork {
 			}
 			if((currentSlot++)%slotsByDay==0)
 				currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
-			
 		}
-	
 	}
 
 	@Override
@@ -369,16 +357,11 @@ public class Google extends SocialNetwork {
 
 	@Override
 	void uploadMatt(Matt matt, String accessToken) {
-		List<String> calendars = matt.getData().getDownloadCalendars(IFrontConnector.GOOGLE);
+		List<String> calendars = matt.getData().getUploadCalendars(IFrontConnector.GOOGLE);
 		if(calendars != null){
 			GoogleCredential credential = getCredential(accessToken);
 			calendarService = new com.google.api.services.calendar.Calendar.Builder(
 					TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
-//			List<CalendarListEntry> items = null;
-			try {
-//				CalendarList calendarList = calendarService.calendarList().list().execute();	
-//				items = calendarList.getItems();
-			} catch (Exception e1) {}
 			String name = matt.getData().getName();//name of matt
 			int nDays = matt.getData().getnDays();//number of days
 			Date startDate  = matt.getData().getStartDate();
@@ -390,7 +373,7 @@ public class Google extends SocialNetwork {
 			int currentSlot = 1;
 			removUploadingMattFromCalendars(matt, calendarService);
 			for(Boolean slot: slots){
-				if(!slot){
+				if(slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
 					event.setSummary(PREFIX_MAT+name);
 					EventDateTime eventDTS = new EventDateTime();
@@ -413,7 +396,6 @@ public class Google extends SocialNetwork {
 					eventRems.add(eRemEml);
 					rem.setOverrides(eventRems);
 					event.setReminders(rem);
-	//System.out.println(event);
 					for(int i = 0; i<calendars.size(); i++){
 						try {
 							calendarService.events().insert(calendars.get(i), event).execute();
@@ -426,9 +408,7 @@ public class Google extends SocialNetwork {
 				}
 				if((currentSlot++)%slotsByDay==0)
 					currentData=startDate.getTime()+startHour*millisInHour+currentSlot/slotsByDay*24*millisInHour;
-				
 			}
-		
 		}
 	}
 
