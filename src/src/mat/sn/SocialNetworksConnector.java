@@ -1,5 +1,6 @@
 package mat.sn;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,13 +113,18 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 
 	@Override
 	public mat.Matt getSlots(String username, mat.Matt matt) {
+System.out.println(matt.toString());
+System.out.println(matt.getData().toString());
+System.out.println(Arrays.deepToString(matt.getData().getDownloadSN()));
 		String[] snNames=matt.getData().getDownloadSN();
-		for (int i=0; i<snNames.length; i++){
-			try{ 
-				if(snNames[i]!=null)
-					matt = getInstance(snNames[i]).getSlots(username, matt, getToken(username, snNames[i]));
-			} catch(Exception e){ 
-				//System.out.println(e.toString());
+		if(snNames != null){	
+			for (int i=0; i<snNames.length; i++){
+				try{ 
+					if(snNames[i]!=null)
+						matt = getInstance(snNames[i]).getSlots(username, matt, getToken(username, snNames[i]));
+				} catch(Exception e){ 
+					//System.out.println(e.toString());
+				}
 			}
 		}
 		return matt;
