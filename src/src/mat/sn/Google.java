@@ -373,7 +373,7 @@ public class Google extends SocialNetwork {
 			int currentSlot = 1;
 			removUploadingMattFromCalendars(matt, calendarService);
 			for(Boolean slot: slots){
-				if(slot){
+				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
 					event.setSummary(PREFIX_MAT+name);
 					EventDateTime eventDTS = new EventDateTime();
