@@ -130,9 +130,15 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 //****************************************************************************************************************
 
 	@Override
-	public void setEvent(String eventName, String userName, Matt matt) {
+	public void setEvent(String[] guestsEmail, String userName, Matt matt) {
 		Google google = new Google();
-		google.setEvent(eventName, userName, matt, getToken(userName, SocialNetworksConnector.GOOGLE));
+		google.setEvent("MAT "+matt.getData().getName(), userName, matt, getToken(userName, SocialNetworksConnector.GOOGLE));
+		String token = null;
+		for(int i=0; i<guestsEmail.length; i++){
+			token = getToken(guestsEmail[i], SocialNetworksConnector.GOOGLE);
+			if(token!=null)
+				google.setEvent("MAT "+matt.getData().getName()+" from "+userName, userName, matt, token);
+		}
 	}
 
 	@Override
