@@ -262,9 +262,11 @@ public class Google extends SocialNetwork {
 						}
 						List<Event> listEvents = events.getItems();
 						for (Event event : listEvents) {
-	//System.out.println(event.getReminders());						
-							EventMAT eventMAT = new EventMAT(event);
-							eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
+	//System.out.println(event.getReminders());
+							if(notOurEvent(event.getSummary())){
+								EventMAT eventMAT = new EventMAT(event);
+								eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
+							}
 						}
 					}
 					slotsMatt.addAll(slotsDay);
@@ -276,6 +278,12 @@ public class Google extends SocialNetwork {
 		return matt;
 	}
     
+	private boolean notOurEvent(String summary) {
+		if(summary.startsWith(PREFIX_MAT))
+			return false;
+		return true;
+	}
+
 	private boolean haveAvailableTimeInTheDay(ArrayList<Boolean> slotsList, int day,
 			int countSlotsInDay) {
 		int firstSlot = day*countSlotsInDay;
