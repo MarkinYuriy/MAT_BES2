@@ -241,7 +241,8 @@ public class Google extends SocialNetwork {
 		long startDateFirst = mattData.getStartDate().getTime() + mattData.getStartHour() * millisInHour /*+ timeZoneShift*/;
 		long endDateFirst = mattData.getStartDate().getTime() + mattData.getEndHour() * millisInHour /*+ timeZoneShift*/;
 		for (CalendarListEntry calendarListEntry : items){
-			if (mattData.getDownloadCalendars(IFrontConnector.GOOGLE).contains(calendarListEntry.getId())) {
+//			if (mattData.getDownloadCalendars(IFrontConnector.GOOGLE).contains(calendarListEntry.getId())) {
+			if (mattData.getDownloadCalendars(IFrontConnector.GOOGLE).contains(calendarListEntry.getSummary())) {
 				String idCalendar = calendarListEntry.getId();
 				DateTime startDateTime = new DateTime(startDateFirst);
 				DateTime endDateTime = new DateTime(endDateFirst);
@@ -391,7 +392,7 @@ public class Google extends SocialNetwork {
 					eventDTE.setDateTime(new DateTime(currentData));
 					event.setEnd(eventDTE);
 					event.setStart(eventDTS);
-					Reminders rem = new Reminders();
+/*					Reminders rem = new Reminders();
 					rem.setUseDefault(false);
 					List<EventReminder> eventRems = new ArrayList<EventReminder>();
 					EventReminder eRemPop = new EventReminder();
@@ -403,7 +404,7 @@ public class Google extends SocialNetwork {
 					eRemEml.setMinutes(5);
 					eventRems.add(eRemEml);
 					rem.setOverrides(eventRems);
-					event.setReminders(rem);
+					event.setReminders(rem);*/
 					for(int i = 0; i<calendars.size(); i++){
 						try {
 							calendarService.events().insert(calendars.get(i), event).execute();
