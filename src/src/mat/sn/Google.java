@@ -370,7 +370,7 @@ public class Google extends SocialNetwork {
 		if(calendars != null){
 			GoogleCredential credential = getCredential(accessToken);
 			calendarService = new com.google.api.services.calendar.Calendar.Builder(
-					TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
+				TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build(); 
 			String name = matt.getData().getName();//name of matt
 			int nDays = matt.getData().getnDays();//number of days
 			Date startDate  = matt.getData().getStartDate();
@@ -380,37 +380,27 @@ public class Google extends SocialNetwork {
 			int slotsByDay = slots.size()/nDays;
 			long currentData = startDate.getTime()+startHour*millisInHour;
 			int currentSlot = 1;
-			removUploadingMattFromCalendars(matt, calendarService);
+			long sDate;
 			for(Boolean slot: slots){
 				if(!slot){
 					com.google.api.services.calendar.model.Event event = new com.google.api.services.calendar.model.Event();
 					event.setSummary(PREFIX_MAT+name);
 					EventDateTime eventDTS = new EventDateTime();
 					eventDTS.setDateTime(new DateTime(currentData));
+					sDate = currentData;
 					currentData+=timeSlot*millisInHour/60;
 					EventDateTime eventDTE = new EventDateTime();
 					eventDTE.setDateTime(new DateTime(currentData));
 					event.setEnd(eventDTE);
 					event.setStart(eventDTS);
-/*					Reminders rem = new Reminders();
+					removUploadingMattFromCalendars(name, calendars, new DateTime(sDate), new DateTime(currentData));
+					Reminders rem = new Reminders();
 					rem.setUseDefault(false);
-					List<EventReminder> eventRems = new ArrayList<EventReminder>();
-					EventReminder eRemPop = new EventReminder();
-					eRemPop.setMethod("popup");
-					eRemPop.setMinutes(10);
-					eventRems.add(eRemPop);
-					EventReminder eRemEml = new EventReminder();
-					eRemEml.setMethod("email");
-					eRemEml.setMinutes(5);
-					eventRems.add(eRemEml);
-					rem.setOverrides(eventRems);
-					event.setReminders(rem);*/
+					event.setReminders(rem);
 					for(int i = 0; i<calendars.size(); i++){
 						try {
 							calendarService.events().insert(calendars.get(i), event).execute();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						} catch (IOException e) { }
 					}
 				} else {
 					currentData+=timeSlot*millisInHour/60;
@@ -421,8 +411,17 @@ public class Google extends SocialNetwork {
 		}
 	}
 
-	private void removUploadingMattFromCalendars(Matt matt, Calendar calendarService2) {
-		
+	private void removUploadingMattFromCalendars(String name, List<String> calendars, DateTime dTS, DateTime dTE) {
+		for(int i = 0; i<calendars.size(); i++){
+			try {
+				Events evs = calendarService.events().list(calendars.get(i)).setTimeMin(dTS).setTimeMax(dTE).execute();
+				List<Event> items = evs.getItems();
+				for(Event ev: items){
+					if(ev.getSummary().equals(PREFIX_MAT+name))
+						calendarService.events().delete(calendars.get(i), ev.getId()).execute();
+				}
+			} catch (Exception e) {	}
+		}
 	}
 
 	@Override
@@ -441,7 +440,6 @@ public class Google extends SocialNetwork {
 	    		service.users().messages().send("me", message).execute();
     		}
     	} catch (Exception e) {
-    		//e.printStackTrace();
     		return false;  
     	} 
     	return true; 
