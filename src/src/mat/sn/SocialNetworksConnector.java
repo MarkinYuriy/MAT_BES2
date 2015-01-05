@@ -137,7 +137,7 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
 		for(int i=0; i<guestsEmail.length; i++){
 			token = getToken(guestsEmail[i], SocialNetworksConnector.GOOGLE);
 			if(token!=null)
-				google.setEvent("MAT "+matt.getData().getName()+" from "+userName, userName, matt, token);
+				google.setEvent("MAT "+matt.getData().getName()+" from "+userName, guestsEmail[i], matt, token);
 		}
 	}
 
