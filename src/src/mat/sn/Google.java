@@ -263,7 +263,6 @@ public class Google extends SocialNetwork {
 						}
 						List<Event> listEvents = events.getItems();
 						for (Event event : listEvents) {
-	//System.out.println(event.getReminders());
 							if(notOurEvent(event.getSummary())){
 								EventMAT eventMAT = new EventMAT(event);
 								eventMAT.setSlots(slotsDay, mattData.getStartHour(), mattData.getTimeSlot());
@@ -280,7 +279,7 @@ public class Google extends SocialNetwork {
 	}
     
 	private boolean notOurEvent(String summary) {
-		if(summary.startsWith(PREFIX_MAT))
+		if(summary!=null && summary.startsWith(PREFIX_MAT))
 			return false;
 		return true;
 	}

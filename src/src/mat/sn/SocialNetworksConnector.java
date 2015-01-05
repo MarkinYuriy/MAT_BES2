@@ -1,6 +1,5 @@
 package mat.sn;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,13 +26,15 @@ public class SocialNetworksConnector implements IFrontConnector, IBackConnector 
         try {
             return  (SocialNetwork) Class.forName(PACKAGE + socialNetwork).newInstance();
         } catch (Exception e) {
-            throw new RuntimeException(socialNetwork + UNSUPPORTED_SN);
+//            throw new RuntimeException(socialNetwork + UNSUPPORTED_SN);
+        	return null;
         }
     }
 
     private String getToken(String username, String socialName) {
         if (!userData.containsKey(username))
-            throw new SecurityException(NO_AUTH);
+        	return null;
+//            throw new SecurityException(NO_AUTH);
         TokenData token = userData.get(username).get(socialName);
         if (token.isExpired()) {
             getInstance(socialName).refreshToken(token);
